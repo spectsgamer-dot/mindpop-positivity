@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MindPop – Positivity Profile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #fff9db;
+    padding: 20px;
+}
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+h1 {
+    text-align: center;
+    color: #f4b400;
+}
+.question {
+    margin-bottom: 15px;
+}
+button {
+    background: #f4b400;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+button:hover {
+    background: #e0a800;
+}
+.result {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fff3b0;
+    border-radius: 10px;
+}
+.disclaimer {
+    font-size: 12px;
+    margin-top: 15px;
+    color: gray;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1>🌼 MindPop Positivity Profile 🌼</h1>
+
+<form id="quizForm">
+
+<h3>Rate each statement (1 = Strongly Disagree, 5 = Strongly Agree)</h3>
+
+<div class="question">1. I generally feel happy and satisfied with my life.
+<br><input type="number" min="1" max="5" required></div>
+
+<div class="question">2. I can manage my emotions effectively.
+<br><input type="number" min="1" max="5" required></div>
+
+<div class="question">3. I adapt easily to new situations.
+<br><input type="number" min="1" max="5" required></div>
+
+<div class="question">4. I understand how others feel.
+<br><input type="number" min="1" max="5" required></div>
+
+<div class="question">5. I feel optimistic about my future.
+<br><input type="number" min="1" max="5" required></div>
+
+<div class="question">6. I stay calm under pressure.
+<br><input type="number" min="1" max="5" required></div>
+
+<div class="question">7. I am organized and responsible.
+<br><input type="number" min="1" max="5" required></div>
+
+<div class="question">8. I express my feelings clearly.
+<br><input type="number" min="1" max="5" required></div>
+
+<div class="question">9. I enjoy social interactions.
+<br><input type="number" min="1" max="5" required></div>
+
+<div class="question">10. I focus on positive aspects of situations.
+<br><input type="number" min="1" max="5" required></div>
+
+<br>
+<button type="button" onclick="calculateScore()">See My Positivity Profile</button>
+
+</form>
+
+<div id="result" class="result" style="display:none;"></div>
+
+<p class="disclaimer">
+This activity is for awareness and positivity promotion only. It is not a clinical or diagnostic assessment.
+</p>
+
+</div>
+
+<script>
+function calculateScore() {
+    const inputs = document.querySelectorAll("input");
+    let total = 0;
+    inputs.forEach(input => total += parseInt(input.value));
+
+    let message = "";
+
+    if (total >= 40) {
+        message = "🌟 You show strong emotional awareness, positivity, and adaptive personality strengths. Keep shining!";
+    } 
+    else if (total >= 25) {
+        message = "🌼 You have healthy positive traits with room to grow. Small daily habits can strengthen your well-being.";
+    } 
+    else {
+        message = "🌱 You may benefit from focusing more on self-care and emotional awareness. Growth is always possible!";
+    }
+
+    document.getElementById("result").style.display = "block";
+    document.getElementById("result").innerHTML = 
+        "<h3>Your Total Score: " + total + "/50</h3><p>" + message + "</p>";
+}
+</script>
+
+</body>
+</html>

@@ -177,9 +177,16 @@ function saveDemographics() {
 // ---------------- DASHBOARD ----------------
 
 function renderDashboard() {
+
+  const completed = sessionState.completedTests.length;
+
   render(`
     <h2>Assessment Dashboard</h2>
-    <button onclick="startTest('Personality')">Personality</button>
+    <p>Completed Tests: ${completed}/5</p>
+
+    <button onclick="startTest('Personality')">
+      Personality
+    </button>
   `);
 }
 
@@ -308,7 +315,9 @@ fetch(WEB_APP_URL, {
   console.error("Submission error:", err);
 });
 
-sessionState.completedTests.push("Personality");
+if (!sessionState.completedTests.includes("Personality")) {
+  sessionState.completedTests.push("Personality");
+}
 
 renderPersonalityResult(traits);
 }
@@ -330,12 +339,32 @@ function renderPersonalityResult(traits) {
     `;
   }
 
-  resultHTML += `
-    <br>
-    <button onclick="renderDashboard()">Back to Dashboard</button>
-  `;
+resultHTML += `
+  <br><br>
+  <button onclick="renderDashboard()">Do Another Test</button>
+  <button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
+    Finish Assessment
+  </button>
+`;
 
   render(resultHTML);
+}
+
+function renderFinalSummary() {
+
+  render(`
+    <h2>Assessment Completed 🎉</h2>
+
+    <p>
+      Thank you for participating in the MindPop Psychological Assessment.
+    </p>
+
+    <p>
+      Your responses contribute to understanding overall student wellbeing.
+    </p>
+
+    <button onclick="renderDashboard()">Back to Dashboard</button>
+  `);
 }
 
 // ---------------- START ----------------

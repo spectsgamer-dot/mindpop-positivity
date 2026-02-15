@@ -206,9 +206,40 @@ function submitTest(testName) {
     Openness: responses[4] + responses[9]
   };
 
-  sessionState.completedTests.push("Personality");
+const rowData = [
+  new Date().toISOString(),
+  sessionState.anonId,
+  sessionState.demographics.name,
+  sessionState.demographics.gender,
+  "",  // Department placeholder
+  "",  // Pursuing placeholder
+  "",  // Year placeholder
+  ...responses,
+  traits.Extraversion,
+  traits.Agreeableness,
+  traits.Conscientiousness,
+  traits.Neuroticism,
+  traits.Openness
+];
 
-  renderPersonalityResult(traits);
+fetch(WEB_APP_URL, {
+  method: "POST",
+  body: JSON.stringify({
+    sheetName: "Personality",
+    rowData: rowData
+  })
+})
+.then(res => res.json())
+.then(data => {
+  console.log("Sheet response:", data);
+})
+.catch(err => {
+  console.error("Submission error:", err);
+});
+
+sessionState.completedTests.push("Personality");
+
+renderPersonalityResult(traits);
 }
 
 function interpretTrait(score) {

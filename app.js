@@ -351,9 +351,10 @@ if (!sessionState.completedTests.includes("Personality")) {
 }
 
 renderPersonalityResult(traits);
+return;    
 }
 
-  if (testName === "Emotional_Intelligence") {
+if (testName === "Emotional_Intelligence") {
 
   const totalEI = responses.reduce((a, b) => a + b, 0);
 
@@ -395,6 +396,7 @@ renderPersonalityResult(traits);
       Finish Assessment
     </button>
   `);
+  return;
 }
 
 function interpretTrait(score) {

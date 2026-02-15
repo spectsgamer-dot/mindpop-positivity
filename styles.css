@@ -1,13 +1,20 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #fff9db;
+  background: #fff6cc;
 }
 
 #app {
   padding: 20px;
-  max-width: 600px;
+  max-width: 650px;
   margin: auto;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 button {
@@ -24,12 +31,13 @@ button:hover {
   background: #e0a800;
 }
 
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
+select, input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
 .progress-bar {

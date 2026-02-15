@@ -77,6 +77,24 @@ const scales = {
     "Some people are generally very happy. They enjoy life regardless of what is going on. To what extent does this describe you?",
     "Some people are generally not very happy. Although they are not depressed, they never seem as happy as they might be. To what extent does this describe you?"
   ]
+},
+  Stress: {
+  items: 4,
+  likert: 5,
+  reverse: [2, 3],
+  labels: [
+    "Never",
+    "Almost Never",
+    "Sometimes",
+    "Fairly Often",
+    "Very Often"
+  ],
+  questions: [
+    "In the last month, how often have you felt that you were unable to control the important things in your life?",
+    "In the last month, how often have you felt confident about your ability to handle your personal problems?",
+    "In the last month, how often have you felt that things were going your way?",
+    "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?"
+  ]
 }
 };
 
@@ -241,6 +259,11 @@ function renderDashboard() {
         style="margin-left:10px;">
       Happiness
     </button>
+
+    <button onclick="startTest('Stress')" 
+        style="margin-left:10px;">
+      Stress
+    </button>
   `);
 }
 
@@ -392,6 +415,31 @@ function submitTest(testName) {
     render(`
         <h2>Happiness Result</h2>
         <p>Your Total Happiness Score: <strong>${totalHappiness}</strong> / 28</p>
+
+        <br><br>
+        <button onclick="renderDashboard()">Do Another Test</button>
+        <button onclick="renderFinalSummary()" 
+            style="margin-left:10px; background:#444;">
+            Finish Assessment
+        </button>
+    `);
+
+    return;
+}
+  // =======================
+  // Perceive Stress Scale
+  // ======================
+  if (testName === "Stress") {
+
+    const totalStress = responses.reduce((a, b) => a + b, 0);
+
+    if (!sessionState.completedTests.includes("Stress")) {
+        sessionState.completedTests.push("Stress");
+    }
+
+    render(`
+        <h2>Perceived Stress Result</h2>
+        <p>Your Total Stress Score: <strong>${totalStress}</strong></p>
 
         <br><br>
         <button onclick="renderDashboard()">Do Another Test</button>

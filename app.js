@@ -1,10 +1,19 @@
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxA5Bpoz5nQ0FwtL9v7WPKSBn3su_xqtXbLzJe74Lx8KtXWMRdreZXwyp3zNVeCUQTw/exec";
+
 // ---------------- SESSION ----------------
 
 let sessionState = {
   anonId: "",
   demographics: {},
-  completedTests: []
+  completedTests: [],
+
+  results: {
+    Personality: null,
+    Emotional_Intelligence: null,
+    Happiness: null,
+    Stress: null,
+    Motivation: null
+  }
 };
 
 // ---------------- SCALE DEFINITIONS ----------------
@@ -268,36 +277,37 @@ function saveDemographics() {
 
 function renderDashboard() {
 
-  const completed = sessionState.completedTests.length;
+    const completed = sessionState.completedTests.length;
 
-  render(`
-    <h2>Assessment Dashboard</h2>
-    <p>Completed Tests: ${completed}/5</p>
+    function testButton(name) {
 
-    <button onclick="startTest('Personality')">
-      Personality
-    </button>
+        const isDone = sessionState.completedTests.includes(name);
 
-    <button onclick="startTest('Emotional_Intelligence')" 
-            style="margin-left:10px;">
-      Emotional Intelligence
-    </button>
+        return `
+            <button 
+                onclick="${isDone ? '' : `startTest('${name}')`}" 
+                style="
+                    margin:5px;
+                    opacity:${isDone ? 0.6 : 1};
+                    cursor:${isDone ? 'not-allowed' : 'pointer'};
+                "
+                ${isDone ? 'disabled' : ''}
+            >
+                ${name.replace("_", " ")} ${isDone ? "✓" : ""}
+            </button>
+        `;
+    }
 
-    <button onclick="startTest('Happiness')" 
-        style="margin-left:10px;">
-      Happiness
-    </button>
+    render(`
+        <h2>Assessment Dashboard</h2>
+        <p>Completed Tests: ${completed}/5</p>
 
-    <button onclick="startTest('Stress')" 
-        style="margin-left:10px;">
-      Stress
-    </button>
-
-    <button onclick="startTest('Motivation')" 
-        style="margin-left:10px;">
-      Motivation
-    </button>
-  `);
+        ${testButton("Personality")}
+        ${testButton("Emotional_Intelligence")}
+        ${testButton("Happiness")}
+        ${testButton("Stress")}
+        ${testButton("Motivation")}
+    `);
 }
 
 // ---------------- TEST ENGINE ----------------
@@ -404,6 +414,7 @@ function submitTest(testName) {
             sessionState.completedTests.push("Personality");
         }
 
+        sessionState.results.Personality = traits;
         renderPersonalityResult(traits);
         return;
     }
@@ -419,6 +430,9 @@ function submitTest(testName) {
             sessionState.completedTests.push("Emotional_Intelligence");
         }
 
+        sessionState.results.Emotional_Intelligence = {
+           total: totalEI
+        };
         render(`
             <h2>Emotional Intelligence Result</h2>
             <p>Your Total EI Score: <strong>${totalEI}</strong></p>
@@ -445,6 +459,9 @@ function submitTest(testName) {
         sessionState.completedTests.push("Happiness");
     }
 
+    sessionState.results.Happiness = {
+       total: totalHappiness
+  };
     render(`
         <h2>Happiness Result</h2>
         <p>Your Total Happiness Score: <strong>${totalHappiness}</strong> / 28</p>
@@ -470,6 +487,9 @@ function submitTest(testName) {
         sessionState.completedTests.push("Stress");
     }
 
+    sessionState.results.Stress = {
+       total: totalStress
+    };
     render(`
         <h2>Perceived Stress Result</h2>
         <p>Your Total Stress Score: <strong>${totalStress}</strong></p>
@@ -503,6 +523,11 @@ function submitTest(testName) {
         sessionState.completedTests.push("Motivation");
     }
 
+    sessionState.results.Motivation = {
+    intrinsic,
+    extrinsic,
+    amotivation
+    };
     render(`
         <h2>Motivation Profile</h2>
 

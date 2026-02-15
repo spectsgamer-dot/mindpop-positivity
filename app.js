@@ -307,6 +307,17 @@ function renderDashboard() {
         ${testButton("Happiness")}
         ${testButton("Stress")}
         ${testButton("Motivation")}
+
+        <br><br>
+
+        ${
+            completed >= 1
+            ? `<button onclick="renderFinalSummary()" 
+                     style="background:#444; margin-top:10px;">
+                 End Assessment
+               </button>`
+            : ""
+        }
     `);
 }
 
@@ -578,19 +589,50 @@ resultHTML += `
 
 function renderFinalSummary() {
 
-  render(`
-    <h2>Assessment Completed 🎉</h2>
+    let summaryHTML = `<h2>Assessment Summary</h2>`;
 
-    <p>
-      Thank you for participating in the MindPop Psychological Assessment.
-    </p>
+    const results = sessionState.results;
 
-    <p>
-      Your responses contribute to understanding overall student wellbeing.
-    </p>
+    // Personality
+    if (results.Personality) {
+        summaryHTML += `<h3>Personality</h3>`;
+        for (let trait in results.Personality) {
+            summaryHTML += `<p><strong>${trait}:</strong> ${results.Personality[trait]}</p>`;
+        }
+    }
 
-    <button onclick="renderDashboard()">Back to Dashboard</button>
-  `);
+    // Emotional Intelligence
+    if (results.Emotional_Intelligence) {
+        summaryHTML += `<h3>Emotional Intelligence</h3>
+                        <p>Total Score: ${results.Emotional_Intelligence.total}</p>`;
+    }
+
+    // Happiness
+    if (results.Happiness) {
+        summaryHTML += `<h3>Happiness</h3>
+                        <p>Total Score: ${results.Happiness.total}</p>`;
+    }
+
+    // Stress
+    if (results.Stress) {
+        summaryHTML += `<h3>Stress</h3>
+                        <p>Total Score: ${results.Stress.total}</p>`;
+    }
+
+    // Motivation
+    if (results.Motivation) {
+        summaryHTML += `<h3>Motivation</h3>
+                        <p>Intrinsic: ${results.Motivation.intrinsic}</p>
+                        <p>Extrinsic: ${results.Motivation.extrinsic}</p>
+                        <p>Amotivation: ${results.Motivation.amotivation}</p>`;
+    }
+
+    summaryHTML += `
+        <br><br>
+        <button onclick="renderDashboard()">Back to Dashboard</button>
+    `;
+
+    render(summaryHTML);
 }
 
 // ---------------- START ----------------

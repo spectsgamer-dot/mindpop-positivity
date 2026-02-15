@@ -1,45 +1,53 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #fff6cc;
+  background: linear-gradient(135deg, #fff3c4, #ffe7a3);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 15px;
 }
 
 #app {
-  padding: 20px;
-  max-width: 650px;
-  margin: auto;
+  width: 100%;
+  max-width: 850px;
 }
 
 .card {
   background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+h2 {
+  margin-top: 0;
 }
 
 button {
-  padding: 10px 15px;
+  padding: 12px 18px;
   border: none;
   border-radius: 8px;
   background: #f4b400;
   color: white;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
+  margin-top: 10px;
 }
 
 button:hover {
   background: #e0a800;
 }
 
-select,
-input {
+select, input {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   margin-top: 5px;
-  margin-bottom: 15px;
-  border-radius: 6px;
+  margin-bottom: 18px;
+  border-radius: 8px;
   border: 1px solid #ccc;
-  box-sizing: border-box;
+  font-size: 14px;
 }
 
 .progress-bar {
@@ -47,22 +55,33 @@ input {
   background: #ddd;
   border-radius: 5px;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 .progress-fill {
   height: 100%;
   background: #f4b400;
   width: 0%;
+  transition: width 0.3s ease;
 }
 
+/* QUESTION STRUCTURE */
+
 .question-block {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 .option-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.option-row input[type="radio"] {
+  transform: scale(1.2);
+}
+
+.option-row label {
+  cursor: pointer;
 }

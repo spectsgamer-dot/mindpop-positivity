@@ -33,7 +33,31 @@ const scales = {
       "I see myself as someone who gets nervous easily.",
       "I see myself as someone who has an active imagination."
     ]
-  }
+  },
+  Emotional_Intelligence: {
+  items: 10,
+  likert: 5,
+  reverse: [],
+  labels: [
+    "Strongly Disagree",
+    "Disagree",
+    "Neutral",
+    "Agree",
+    "Strongly Agree"
+  ],
+  questions: [
+    "I understand my emotions clearly.",
+    "I can regulate my emotions effectively.",
+    "I stay calm under pressure.",
+    "I understand how others feel.",
+    "I can respond appropriately to others' emotions.",
+    "I am aware of how my emotions influence my behavior.",
+    "I handle emotional situations well.",
+    "I am sensitive to the feelings of others.",
+    "I can control impulsive emotional reactions.",
+    "I express my emotions appropriately."
+  ]
+}
 };
 
 // ---------------- UTILITY ----------------
@@ -186,6 +210,11 @@ function renderDashboard() {
 
     <button onclick="startTest('Personality')">
       Personality
+    </button>
+
+    <button onclick="startTest('Emotional_Intelligence')" 
+            style="margin-left:10px;">
+      Emotional Intelligence
     </button>
   `);
 }
@@ -366,6 +395,50 @@ function renderFinalSummary() {
     <button onclick="renderDashboard()">Back to Dashboard</button>
   `);
 }
+if (testName === "Emotional_Intelligence") {
+
+  const totalEI = responses.reduce((a, b) => a + b, 0);
+
+  const rowData = [
+    new Date().toISOString(),
+    sessionState.anonId,
+    sessionState.demographics.name,
+    sessionState.demographics.gender,
+    sessionState.demographics.department,
+    sessionState.demographics.pursuing,
+    sessionState.demographics.year,
+    ...responses,
+    totalEI
+  ];
+
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      sheetName: "Emotional_Intelligence",
+      rowData: rowData
+    })
+  })
+  .then(res => res.json())
+  .then(data => console.log("EI stored:", data))
+  .catch(err => console.error("EI error:", err));
+
+  if (!sessionState.completedTests.includes("Emotional_Intelligence")) {
+    sessionState.completedTests.push("Emotional_Intelligence");
+  }
+
+  render(`
+    <h2>Emotional Intelligence Result</h2>
+    <p>Your Total EI Score: <strong>${totalEI}</strong></p>
+
+    <br><br>
+    <button onclick="renderDashboard()">Do Another Test</button>
+    <button onclick="renderFinalSummary()" 
+            style="margin-left:10px; background:#444;">
+      Finish Assessment
+    </button>
+  `);
+}
+
 
 // ---------------- START ----------------
 

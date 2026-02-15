@@ -305,6 +305,8 @@ function submitTest(testName) {
     responses[idx] = (scale.likert + 1) - responses[idx];
   });
 
+  if (testname === "Personality"){
+    
   const traits = {
     Extraversion: responses[0] + responses[5],
     Agreeableness: responses[1] + responses[6],
@@ -351,6 +353,50 @@ if (!sessionState.completedTests.includes("Personality")) {
 renderPersonalityResult(traits);
 }
 
+  if (testName === "Emotional_Intelligence") {
+
+  const totalEI = responses.reduce((a, b) => a + b, 0);
+
+  const rowData = [
+    new Date().toISOString(),
+    sessionState.anonId,
+    sessionState.demographics.name,
+    sessionState.demographics.gender,
+    sessionState.demographics.department,
+    sessionState.demographics.pursuing,
+    sessionState.demographics.year,
+    ...responses,
+    totalEI
+  ];
+
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      sheetName: "Emotional_Intelligence",
+      rowData: rowData
+    })
+  })
+  .then(res => res.json())
+  .then(data => console.log("EI stored:", data))
+  .catch(err => console.error("EI error:", err));
+
+  if (!sessionState.completedTests.includes("Emotional_Intelligence")) {
+    sessionState.completedTests.push("Emotional_Intelligence");
+  }
+
+  render(`
+    <h2>Emotional Intelligence Result</h2>
+    <p>Your Total EI Score: <strong>${totalEI}</strong></p>
+
+    <br><br>
+    <button onclick="renderDashboard()">Do Another Test</button>
+    <button onclick="renderFinalSummary()" 
+            style="margin-left:10px; background:#444;">
+      Finish Assessment
+    </button>
+  `);
+}
+
 function interpretTrait(score) {
   if (score <= 4) return "Low";
   if (score <= 7) return "Moderate";
@@ -395,50 +441,6 @@ function renderFinalSummary() {
     <button onclick="renderDashboard()">Back to Dashboard</button>
   `);
 }
-if (testName === "Emotional_Intelligence") {
-
-  const totalEI = responses.reduce((a, b) => a + b, 0);
-
-  const rowData = [
-    new Date().toISOString(),
-    sessionState.anonId,
-    sessionState.demographics.name,
-    sessionState.demographics.gender,
-    sessionState.demographics.department,
-    sessionState.demographics.pursuing,
-    sessionState.demographics.year,
-    ...responses,
-    totalEI
-  ];
-
-  fetch(WEB_APP_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      sheetName: "Emotional_Intelligence",
-      rowData: rowData
-    })
-  })
-  .then(res => res.json())
-  .then(data => console.log("EI stored:", data))
-  .catch(err => console.error("EI error:", err));
-
-  if (!sessionState.completedTests.includes("Emotional_Intelligence")) {
-    sessionState.completedTests.push("Emotional_Intelligence");
-  }
-
-  render(`
-    <h2>Emotional Intelligence Result</h2>
-    <p>Your Total EI Score: <strong>${totalEI}</strong></p>
-
-    <br><br>
-    <button onclick="renderDashboard()">Do Another Test</button>
-    <button onclick="renderFinalSummary()" 
-            style="margin-left:10px; background:#444;">
-      Finish Assessment
-    </button>
-  `);
-}
-
 
 // ---------------- START ----------------
 

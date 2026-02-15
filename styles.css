@@ -53,3 +53,13 @@ select, input {
   background: #f4b400;
   width: 0%;
 }
+.option-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 10px;
+}
+
+.option-row input[type="radio"] {
+  margin: 0;
+}

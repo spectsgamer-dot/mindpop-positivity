@@ -135,10 +135,11 @@ function startTest(testName) {
     }
 
     questionsHTML += `
-      <p><strong>${index + 1}. ${q}</strong></p>
-      ${options}
-      <br>
-    `;
+  <div style="margin-bottom:20px;">
+    <p><strong>${index + 1}. ${q}</strong></p>
+    ${options}
+  </div>
+`;
   });
 
   render(`
@@ -221,7 +222,7 @@ function renderPersonalityResult(traits) {
   }
 
   resultHTML += `
-    <br>
+    
     <button onclick="renderDashboard()">Back to Dashboard</button>
   `;
 

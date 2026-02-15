@@ -277,126 +277,82 @@ function updateProgress(total) {
   document.getElementById("progressFill").style.width = percent + "%";
 }
 
-// ---------------- PERSONALITY SCORING ----------------
+// ---------------- SCORING ----------------
 
 function submitTest(testName) {
 
-  const scale = scales[testName];
-  const form = document.getElementById("testForm");
-  const data = new FormData(form);
+    const scale = scales[testName];
+    const form = document.getElementById("testForm");
+    const data = new FormData(form);
 
-  let responses = [];
-  let missing = false;
+    let responses = [];
+    let missing = false;
 
-  for (let i = 0; i < scale.items; i++) {
-    const val = data.get("q" + i);
-    if (!val) missing = true;
-    responses.push(Number(val));
-  }
+    // Collect responses
+    for (let i = 0; i < scale.items; i++) {
+        const val = data.get("q" + i);
+        if (!val) missing = true;
+        responses.push(Number(val));
+    }
 
-  if (missing) {
-    alert("Please answer all questions.");
-    return;
-  }
+    if (missing) {
+        alert("Please answer all questions.");
+        return;
+    }
 
-  // Reverse scoring
-  scale.reverse.forEach(index => {
-    const idx = index - 1;
-    responses[idx] = (scale.likert + 1) - responses[idx];
-  });
+    // Reverse scoring
+    scale.reverse.forEach(index => {
+        const idx = index - 1;
+        responses[idx] = (scale.likert + 1) - responses[idx];
+    });
 
-  if (testname === "Personality"){
-    
-  const traits = {
-    Extraversion: responses[0] + responses[5],
-    Agreeableness: responses[1] + responses[6],
-    Conscientiousness: responses[2] + responses[7],
-    Neuroticism: responses[3] + responses[8],
-    Openness: responses[4] + responses[9]
-  };
+    // ======================
+    // PERSONALITY SCORING
+    // ======================
+    if (testName === "Personality") {
 
-const rowData = [
-  new Date().toISOString(),
-  sessionState.anonId,
-  sessionState.demographics.name,
-  sessionState.demographics.gender,
-sessionState.demographics.department,
-sessionState.demographics.pursuing,
-sessionState.demographics.year,
-  ...responses,
-  traits.Extraversion,
-  traits.Agreeableness,
-  traits.Conscientiousness,
-  traits.Neuroticism,
-  traits.Openness
-];
+        const traits = {
+            Extraversion: responses[0] + responses[5],
+            Agreeableness: responses[1] + responses[6],
+            Conscientiousness: responses[2] + responses[7],
+            Neuroticism: responses[3] + responses[8],
+            Openness: responses[4] + responses[9]
+        };
 
-fetch(WEB_APP_URL, {
-  method: "POST",
-  body: JSON.stringify({
-    sheetName: "Personality",
-    rowData: rowData
-  })
-})
-.then(res => res.json())
-.then(data => {
-  console.log("Sheet response:", data);
-})
-.catch(err => {
-  console.error("Submission error:", err);
-});
+        if (!sessionState.completedTests.includes("Personality")) {
+            sessionState.completedTests.push("Personality");
+        }
 
-if (!sessionState.completedTests.includes("Personality")) {
-  sessionState.completedTests.push("Personality");
-}
+        renderPersonalityResult(traits);
+        return;
+    }
 
-renderPersonalityResult(traits);
-return;    
-}
+    // ======================
+    // EMOTIONAL INTELLIGENCE
+    // ======================
+    if (testName === "Emotional_Intelligence") {
 
-if (testName === "Emotional_Intelligence") {
+        const totalEI = responses.reduce((a, b) => a + b, 0);
 
-  const totalEI = responses.reduce((a, b) => a + b, 0);
+        if (!sessionState.completedTests.includes("Emotional_Intelligence")) {
+            sessionState.completedTests.push("Emotional_Intelligence");
+        }
 
-  const rowData = [
-    new Date().toISOString(),
-    sessionState.anonId,
-    sessionState.demographics.name,
-    sessionState.demographics.gender,
-    sessionState.demographics.department,
-    sessionState.demographics.pursuing,
-    sessionState.demographics.year,
-    ...responses,
-    totalEI
-  ];
+        render(`
+            <h2>Emotional Intelligence Result</h2>
+            <p>Your Total EI Score: <strong>${totalEI}</strong></p>
 
-  fetch(WEB_APP_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      sheetName: "Emotional_Intelligence",
-      rowData: rowData
-    })
-  })
-  .then(res => res.json())
-  .then(data => console.log("EI stored:", data))
-  .catch(err => console.error("EI error:", err));
+            <br><br>
+            <button onclick="renderDashboard()">Do Another Test</button>
+            <button onclick="renderFinalSummary()" 
+                style="margin-left:10px; background:#444;">
+                Finish Assessment
+            </button>
+        `);
 
-  if (!sessionState.completedTests.includes("Emotional_Intelligence")) {
-    sessionState.completedTests.push("Emotional_Intelligence");
-  }
+        return;
+    }
 
-  render(`
-    <h2>Emotional Intelligence Result</h2>
-    <p>Your Total EI Score: <strong>${totalEI}</strong></p>
-
-    <br><br>
-    <button onclick="renderDashboard()">Do Another Test</button>
-    <button onclick="renderFinalSummary()" 
-            style="margin-left:10px; background:#444;">
-      Finish Assessment
-    </button>
-  `);
-  return;
 }
 
 function interpretTrait(score) {

@@ -589,50 +589,82 @@ resultHTML += `
 
 function renderFinalSummary() {
 
-    let summaryHTML = `<h2>Assessment Summary</h2>`;
+    const r = sessionState.results;
 
-    const results = sessionState.results;
+    let html = `<h2>Assessment Summary 📊</h2>`;
 
-    // Personality
-    if (results.Personality) {
-        summaryHTML += `<h3>Personality</h3>`;
-        for (let trait in results.Personality) {
-            summaryHTML += `<p><strong>${trait}:</strong> ${results.Personality[trait]}</p>`;
+    // ---------------- Personality ----------------
+    if (r.Personality) {
+        html += `<h3>Personality</h3>`;
+        for (let trait in r.Personality) {
+            html += `<p><strong>${trait}:</strong> ${r.Personality[trait]}</p>`;
         }
     }
 
-    // Emotional Intelligence
-    if (results.Emotional_Intelligence) {
-        summaryHTML += `<h3>Emotional Intelligence</h3>
-                        <p>Total Score: ${results.Emotional_Intelligence.total}</p>`;
+    // ---------------- Emotional Intelligence ----------------
+    if (r.Emotional_Intelligence) {
+        html += `
+        <h3>Emotional Intelligence</h3>
+        <p>Total EI Score: <strong>${r.Emotional_Intelligence.total}</strong></p>
+        `;
     }
 
-    // Happiness
-    if (results.Happiness) {
-        summaryHTML += `<h3>Happiness</h3>
-                        <p>Total Score: ${results.Happiness.total}</p>`;
+    // ---------------- Happiness ----------------
+    if (r.Happiness) {
+        html += `
+        <h3>Happiness</h3>
+        <p>Total Happiness Score: <strong>${r.Happiness.total}</strong> / 28</p>
+        `;
     }
 
-    // Stress
-    if (results.Stress) {
-        summaryHTML += `<h3>Stress</h3>
-                        <p>Total Score: ${results.Stress.total}</p>`;
+    // ---------------- Stress ----------------
+    if (r.Stress) {
+        html += `
+        <h3>Stress</h3>
+        <p>Total Stress Score: <strong>${r.Stress.total}</strong> / 16</p>
+        `;
+        
+        // Counsellor Trigger
+        if (r.Stress.total >= 10) {
+            html += `
+            <div style="margin-top:15px; padding:15px; background:#ffe6e6; border-radius:8px;">
+            <strong>We noticed elevated stress levels.</strong><br>
+            It may be helpful to consider meeting Ms. Neha (Counselling Room – Block A, Ground Floor) later this month.
+            </div>
+            `;
+        }
     }
 
-    // Motivation
-    if (results.Motivation) {
-        summaryHTML += `<h3>Motivation</h3>
-                        <p>Intrinsic: ${results.Motivation.intrinsic}</p>
-                        <p>Extrinsic: ${results.Motivation.extrinsic}</p>
-                        <p>Amotivation: ${results.Motivation.amotivation}</p>`;
+    // ---------------- Motivation ----------------
+    if (r.Motivation) {
+        html += `
+        <h3>Motivation Profile</h3>
+        <p><strong>Intrinsic:</strong> ${r.Motivation.intrinsic}</p>
+        <p><strong>Extrinsic:</strong> ${r.Motivation.extrinsic}</p>
+        <p><strong>Amotivation:</strong> ${r.Motivation.amotivation}</p>
+        `;
     }
 
-    summaryHTML += `
-        <br><br>
-        <button onclick="renderDashboard()">Back to Dashboard</button>
+    html += `
+    <br>
+    <button onclick="renderDashboard()">Back to Dashboard</button>
+    <button onclick="resetAssessment()" style="margin-left:10px;background:#444;">
+    Start New Assessment
+    </button>
     `;
 
-    render(summaryHTML);
+    render(html);
+}
+function resetAssessment() {
+    sessionState.completedTests = [];
+    sessionState.results = {
+        Personality: null,
+        Emotional_Intelligence: null,
+        Happiness: null,
+        Stress: null,
+        Motivation: null
+    };
+    renderDashboard();
 }
 
 // ---------------- START ----------------

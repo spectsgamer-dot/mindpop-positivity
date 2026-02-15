@@ -95,6 +95,34 @@ const scales = {
     "In the last month, how often have you felt that things were going your way?",
     "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?"
   ]
+},
+  Motivation: {
+  items: 12,
+  likert: 7,
+  reverse: [],
+  labels: [
+    "Strongly Disagree",
+    "Disagree",
+    "Slightly Disagree",
+    "Neutral",
+    "Slightly Agree",
+    "Agree",
+    "Strongly Agree"
+  ],
+  questions: [
+    "Because I enjoy this work.",
+    "Because I believe this work is personally important.",
+    "Because I would feel guilty if I didn’t do it.",
+    "Because I am rewarded for doing this work.",
+    "I don’t know why I’m doing this work.",
+    "Because I find this work interesting.",
+    "Because I get pleasure from doing this work.",
+    "Because I would feel ashamed if I didn’t do it.",
+    "Because others expect me to do it.",
+    "I don’t really know why I’m doing this.",
+    "Because I value this work.",
+    "I feel I am wasting my time doing this."
+  ]
 }
 };
 
@@ -263,6 +291,11 @@ function renderDashboard() {
     <button onclick="startTest('Stress')" 
         style="margin-left:10px;">
       Stress
+    </button>
+
+    <button onclick="startTest('Motivation')" 
+        style="margin-left:10px;">
+      Motivation
     </button>
   `);
 }
@@ -440,6 +473,42 @@ function submitTest(testName) {
     render(`
         <h2>Perceived Stress Result</h2>
         <p>Your Total Stress Score: <strong>${totalStress}</strong></p>
+
+        <br><br>
+        <button onclick="renderDashboard()">Do Another Test</button>
+        <button onclick="renderFinalSummary()" 
+            style="margin-left:10px; background:#444;">
+            Finish Assessment
+        </button>
+    `);
+
+    return;
+}
+  // =======================
+  // Motivation Scale
+  // =======================
+  if (testName === "Motivation") {
+
+    const intrinsic = responses[0] + responses[5] + responses[6];
+
+    const identified = responses[1] + responses[10];
+    const introjected = responses[2] + responses[7];
+    const external = responses[3] + responses[8];
+
+    const extrinsic = identified + introjected + external;
+
+    const amotivation = responses[4] + responses[9] + responses[11];
+
+    if (!sessionState.completedTests.includes("Motivation")) {
+        sessionState.completedTests.push("Motivation");
+    }
+
+    render(`
+        <h2>Motivation Profile</h2>
+
+        <p><strong>Intrinsic Motivation:</strong> ${intrinsic}</p>
+        <p><strong>Extrinsic Motivation:</strong> ${extrinsic}</p>
+        <p><strong>Amotivation:</strong> ${amotivation}</p>
 
         <br><br>
         <button onclick="renderDashboard()">Do Another Test</button>

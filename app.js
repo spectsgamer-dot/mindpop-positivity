@@ -1,5 +1,7 @@
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxA5Bpoz5nQ0FwtL9v7WPKSBn3su_xqtXbLzJe74Lx8KtXWMRdreZXwyp3zNVeCUQTw/exec";
 
+// ------------------ SESSION STATE ------------------
+
 let sessionState = {
   anonId: "",
   demographics: {},
@@ -8,7 +10,98 @@ let sessionState = {
   scores: {}
 };
 
-// ---------- Utility ----------
+// ------------------ SCALE DEFINITIONS ------------------
+
+const scales = {
+
+  Personality: {
+    items: 10,
+    likert: 5,
+    reverse: [2,4,6,8,10],
+    labels: ["Strongly Disagree","Disagree","Neutral","Agree","Strongly Agree"],
+    questions: [
+      "I see myself as someone who is reserved.",
+      "I see myself as someone who is generally trusting.",
+      "I see myself as someone who tends to be lazy.",
+      "I see myself as someone who is relaxed, handles stress well.",
+      "I see myself as someone who has few artistic interests.",
+      "I see myself as someone who is outgoing, sociable.",
+      "I see myself as someone who tends to find fault with others.",
+      "I see myself as someone who does a thorough job.",
+      "I see myself as someone who gets nervous easily.",
+      "I see myself as someone who has an active imagination."
+    ]
+  },
+
+  Emotional_Intelligence: {
+    items: 10,
+    likert: 5,
+    reverse: [],
+    labels: ["Strongly Disagree","Disagree","Neutral","Agree","Strongly Agree"],
+    questions: [
+      "I am aware of my emotions as I experience them.",
+      "I can regulate my emotions effectively.",
+      "I understand why I feel the way I do.",
+      "I can handle stressful situations calmly.",
+      "I am sensitive to others’ feelings.",
+      "I can motivate myself to overcome challenges.",
+      "I recognize emotions in others easily.",
+      "I can control my anger when needed.",
+      "I express my emotions appropriately.",
+      "I use emotions to enhance my performance."
+    ]
+  },
+
+  Happiness: {
+    items: 4,
+    likert: 7,
+    reverse: [4],
+    labels: ["1","2","3","4","5","6","7"],
+    questions: [
+      "In general, I consider myself a happy person.",
+      "Compared with most of my peers, I consider myself happy.",
+      "Some people are generally very happy. I am one of those people.",
+      "Some people are generally not very happy. I am not one of them."
+    ]
+  },
+
+  Stress: {
+    items: 4,
+    likert: 5,
+    reverse: [2,3],
+    labels: ["Never","Almost Never","Sometimes","Fairly Often","Very Often"],
+    questions: [
+      "In the last month, how often have you felt unable to control important things in your life?",
+      "In the last month, how often have you felt confident about handling personal problems?",
+      "In the last month, how often have you felt that things were going your way?",
+      "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?"
+    ]
+  },
+
+  Motivation: {
+    items: 12,
+    likert: 7,
+    reverse: [],
+    labels: ["Strongly Disagree","Disagree","Slightly Disagree","Neutral","Slightly Agree","Agree","Strongly Agree"],
+    questions: [
+      "I study because I enjoy learning new things.",
+      "I study because education is important for my goals.",
+      "I study because I would feel guilty if I did not.",
+      "I study because others expect me to.",
+      "I study because it is fun.",
+      "I study because it helps me achieve personal growth.",
+      "I study because I want recognition from others.",
+      "I study because of external rewards.",
+      "I study because I find it interesting.",
+      "I study because it aligns with my values.",
+      "I study because I feel pressure to succeed.",
+      "I study because I do not know why I am doing it."
+    ]
+  }
+
+};
+
+// ------------------ UTILITY ------------------
 
 function generateAnonId() {
   const now = new Date();
@@ -23,152 +116,5 @@ function clearApp() {
 
 function showCard(content) {
   clearApp();
-  document.getElementById("app").innerHTML = `
-    <div class="card">
-      ${content}
-    </div>
-  `;
+  document.getElementById("app").innerHTML = `<div class="card">${content}</div>`;
 }
-
-// ---------- Consent ----------
-
-function renderConsent() {
-  showCard(`
-    <h2>😊 Welcome to MindPop</h2>
-    <p>
-      This assessment aims to understand the emotional and well-being profile of our university community.
-      Your responses are anonymous and used only for academic analysis.
-    </p>
-    <p>
-      Participation is voluntary. This is not a clinical diagnosis.
-    </p>
-    <button onclick="acceptConsent()">I Agree</button>
-    <button onclick="declineConsent()">I Do Not Agree</button>
-  `);
-}
-
-function acceptConsent() {
-  sessionState.anonId = generateAnonId();
-  renderDemographics();
-}
-
-function declineConsent() {
-  showCard(`
-    <h2>😔 Consent Required</h2>
-    <p>You must provide consent to participate in this assessment.</p>
-    <button onclick="renderConsent()">Go Back</button>
-  `);
-}
-
-// ---------- Demographics ----------
-
-function renderDemographics() {
-  showCard(`
-    <h2>Basic Details</h2>
-
-    <label>Name (Optional)</label><br>
-    <input id="name" /><br><br>
-
-    <label>Gender</label><br>
-    <select id="gender">
-      <option value="">Select</option>
-      <option>Male</option>
-      <option>Female</option>
-      <option>Other</option>
-    </select><br><br>
-
-    <label>Department</label><br>
-    <select id="department">
-      <option value="">Select</option>
-      <option>Humanities & Social Sciences</option>
-      <option>Sciences</option>
-      <option>Paramedical Sciences</option>
-      <option>Pharmaceutical Science</option>
-      <option>Engineering</option>
-      <option>Computer Technology</option>
-      <option>Nursing</option>
-      <option>Physiotherapy & Rehabilitation</option>
-      <option>Commerce & Management</option>
-      <option>Agriculture Sciences & Technology</option>
-    </select><br><br>
-
-    <label>Pursuing</label><br>
-    <select id="pursuing">
-      <option value="">Select</option>
-      <option>Undergraduate</option>
-      <option>Postgraduate</option>
-    </select><br><br>
-
-    <label>Year</label><br>
-    <select id="year">
-      <option value="">Select</option>
-      <option>1st Year</option>
-      <option>2nd Year</option>
-      <option>3rd Year</option>
-      <option>4th Year</option>
-    </select><br><br>
-
-    <button onclick="saveDemographics()">Continue</button>
-  `);
-}
-
-function saveDemographics() {
-  const gender = document.getElementById("gender").value;
-  const department = document.getElementById("department").value;
-  const pursuing = document.getElementById("pursuing").value;
-  const year = document.getElementById("year").value;
-
-  if (!gender || !department || !pursuing || !year) {
-    alert("Please complete all required fields.");
-    return;
-  }
-
-  sessionState.demographics = {
-    name: document.getElementById("name").value || "",
-    gender,
-    department,
-    pursuing,
-    year
-  };
-
-  renderDashboard();
-}
-
-// ---------- Dashboard ----------
-
-function renderDashboard() {
-  let completionInfo = `
-    <p>Completed Tests: ${sessionState.completedTests.length}/5</p>
-  `;
-
-  showCard(`
-    <h2>Assessment Dashboard</h2>
-    ${completionInfo}
-    <button onclick="startTest('Personality')">Personality</button><br><br>
-    <button onclick="startTest('Emotional_Intelligence')">Emotional Intelligence</button><br><br>
-    <button onclick="startTest('Happiness')">Happiness</button><br><br>
-    <button onclick="startTest('Stress')">Stress</button><br><br>
-    <button onclick="startTest('Motivation')">Motivation</button><br><br>
-    <button onclick="endAssessment()">Finish Assessment</button>
-  `);
-}
-
-// ---------- Placeholder Test Start ----------
-
-function startTest(testName) {
-  if (!sessionState.demographicsLocked) {
-    sessionState.demographicsLocked = true;
-  }
-
-  alert("Test engine coming next phase: " + testName);
-}
-
-// ---------- End Assessment ----------
-
-function endAssessment() {
-  alert("Final Summary engine coming next phase.");
-}
-
-// ---------- Start App ----------
-
-renderConsent();

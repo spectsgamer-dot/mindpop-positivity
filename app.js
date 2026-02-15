@@ -591,7 +591,11 @@ function renderFinalSummary() {
 
     const r = sessionState.results;
 
-    let html = `<h2>Assessment Summary 📊</h2>`;
+    let html = `<h2>Assessment Completed 😆🎉</h2>`;
+    const r = sessionState.results;
+    let supportBlocks = "";
+    let counsellingShown = false;
+
 
     // ---------------- Personality ----------------
     if (r.Personality) {
@@ -652,6 +656,93 @@ function renderFinalSummary() {
     Start New Assessment
     </button>
     `;
+
+    if (r.Happiness && r.Happiness.total <= 12) {
+
+    supportBlocks += `
+    <div class="support-card happiness">
+    <h3>🌼 Student Wellbeing Reflection</h3>
+    <p>Your responses suggest there may be space to enhance daily student happiness experiences.</p>
+    <p>If you’d like, you can share ideas that could help make university life more positive.</p>
+
+    <button onclick="window.open('https://forms.gle/HvzwyFR8W2UsGVpEA','_blank')">
+    Share Suggestion
+    </button>
+
+    <button onclick="this.parentElement.style.display='none'">
+    Skip
+    </button>
+    </div>
+    `;
+    }
+   
+  if (r.Stress && r.Stress.total >= 10) {
+
+  supportBlocks += `
+  <div class="support-card stress">
+  <h3>🌿 Support Reminder</h3>
+  <p>Your responses indicate elevated stress levels.</p>
+  <p>Sometimes speaking with a professional can be helpful.</p>
+  <p><strong>Ms. Neha</strong><br>
+  Counselling Room – Block A, Ground Floor</p>
+
+  <button onclick="window.open('https://forms.gle/qPGY49pDKXnqEyfbA','_blank')">
+  Request Confidential Conversation
+  </button>
+
+  <button onclick="this.parentElement.style.display='none'">
+  Skip
+  </button>
+  </div>
+  `;
+
+  counsellingShown = true;
+  }
+
+  if (r.Emotional_Intelligence && r.Emotional_Intelligence.total <= 24) {
+
+  supportBlocks += `
+  <div class="support-card ei">
+  <h3>🧠 Emotional Skills Growth</h3>
+  <p>Emotional intelligence is a developable skill.</p>
+  <p>With awareness and practice, emotional regulation and empathy can strengthen significantly over time.</p>
+  </div>
+  `;
+  }
+
+  if (
+  r.Motivation &&
+  r.Motivation.amotivation > r.Motivation.intrinsic &&
+  r.Motivation.amotivation > r.Motivation.extrinsic &&
+  !counsellingShown
+  ) {
+
+  supportBlocks += `
+  <div class="support-card motivation">
+  <h3>🎯 Direction & Motivation</h3>
+  <p>Your responses suggest you may be experiencing reduced drive or direction.</p>
+  <p>A reflective conversation could help explore goals and clarity.</p>
+  <p><strong>Ms. Neha</strong><br>
+  Counselling Room – Block A, Ground Floor</p>
+
+  <button onclick="window.open('https://forms.gle/qPGY49pDKXnqEyfbA','_blank')">
+  Request Confidential Conversation
+  </button>
+
+  <button onclick="this.parentElement.style.display='none'">
+  Skip
+  </button>
+  </div>
+  `;
+  }
+
+  if (supportBlocks !== "") {
+  html += `
+  <h3>Support & Reflection</h3>
+  ${supportBlocks}
+  `;
+ }
+
 
     render(html);
 }

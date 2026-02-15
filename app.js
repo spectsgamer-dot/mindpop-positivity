@@ -592,7 +592,6 @@ function renderFinalSummary() {
     const r = sessionState.results;
 
     let html = `<h2>Assessment Completed 😆🎉</h2>`;
-    const r = sessionState.results;
     let supportBlocks = "";
     let counsellingShown = false;
 

@@ -1,5 +1,4 @@
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxA5Bpoz5nQ0FwtL9v7WPKSBn3su_xqtXbLzJe74Lx8KtXWMRdreZXwyp3zNVeCUQTw/exec";
-
 // ---------------- SESSION ----------------
 
 let sessionState = {
@@ -15,7 +14,13 @@ const scales = {
     items: 10,
     likert: 5,
     reverse: [2,4,6,8,10],
-    labels: ["Strongly Disagree","Disagree","Neutral","Agree","Strongly Agree"],
+    labels: [
+      "Strongly Disagree",
+      "Disagree",
+      "Neutral",
+      "Agree",
+      "Strongly Agree"
+    ],
     questions: [
       "I see myself as someone who is reserved.",
       "I see myself as someone who is generally trusting.",
@@ -113,12 +118,6 @@ function startTest(testName) {
 
   const scale = scales[testName];
 
-  let progressBar = `
-    <div class="progress-bar">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
-  `;
-
   let questionsHTML = "";
 
   scale.questions.forEach((q, index) => {
@@ -126,28 +125,39 @@ function startTest(testName) {
     let options = "";
 
     for (let i = 1; i <= scale.likert; i++) {
-     options += `
-  <div class="option-row">
-    <input type="radio" name="q${index}" value="${i}" onclick="updateProgress(${scale.items})">
-    <label>${scale.labels[i - 1]}</label>
-  </div>
-`;
+      options += `
+        <div class="option-row">
+          <input type="radio" id="q${index}_${i}" 
+                 name="q${index}" 
+                 value="${i}" 
+                 onclick="updateProgress(${scale.items})">
+          <label for="q${index}_${i}">
+            ${scale.labels[i - 1]}
+          </label>
+        </div>
+      `;
     }
 
     questionsHTML += `
-  <div style="margin-bottom:20px;">
-    <p><strong>${index + 1}. ${q}</strong></p>
-    ${options}
-  </div>
-`;
+      <div class="question-block">
+        <p><strong>${index + 1}. ${q}</strong></p>
+        ${options}
+      </div>
+    `;
   });
 
   render(`
     <h2>${testName}</h2>
-    ${progressBar}
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
     <form id="testForm">
       ${questionsHTML}
-      <button type="button" onclick="submitTest('${testName}')">Submit</button>
+      <button type="button" onclick="submitTest('${testName}')">
+        Submit
+      </button>
     </form>
   `);
 }
@@ -159,6 +169,8 @@ function updateProgress(total) {
   const percent = (answered.size / total) * 100;
   document.getElementById("progressFill").style.width = percent + "%";
 }
+
+// ---------------- PERSONALITY SCORING ----------------
 
 function submitTest(testName) {
 
@@ -180,29 +192,25 @@ function submitTest(testName) {
     return;
   }
 
-  // Apply reverse scoring
+  // Reverse scoring
   scale.reverse.forEach(index => {
     const idx = index - 1;
     responses[idx] = (scale.likert + 1) - responses[idx];
   });
 
-  if (testName === "Personality") {
+  const traits = {
+    Extraversion: responses[0] + responses[5],
+    Agreeableness: responses[1] + responses[6],
+    Conscientiousness: responses[2] + responses[7],
+    Neuroticism: responses[3] + responses[8],
+    Openness: responses[4] + responses[9]
+  };
 
-    const traits = {
-      Extraversion: responses[0] + responses[5],
-      Agreeableness: responses[1] + responses[6],
-      Conscientiousness: responses[2] + responses[7],
-      Neuroticism: responses[3] + responses[8],
-      Openness: responses[4] + responses[9]
-    };
+  sessionState.completedTests.push("Personality");
 
-    sessionState.completedTests.push("Personality");
-    sessionState.personalityRaw = responses;
-    sessionState.personalityTraits = traits;
-
-    renderPersonalityResult(traits);
-  }
+  renderPersonalityResult(traits);
 }
+
 function interpretTrait(score) {
   if (score <= 4) return "Low";
   if (score <= 7) return "Moderate";
@@ -216,13 +224,12 @@ function renderPersonalityResult(traits) {
   for (let trait in traits) {
     const level = interpretTrait(traits[trait]);
     resultHTML += `
-      <p><strong>${trait}</strong>: ${traits[trait]} 
-      (${level})</p>
+      <p><strong>${trait}</strong>: ${traits[trait]} (${level})</p>
     `;
   }
 
   resultHTML += `
-    
+    <br>
     <button onclick="renderDashboard()">Back to Dashboard</button>
   `;
 

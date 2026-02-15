@@ -118,3 +118,108 @@ function showCard(content) {
   clearApp();
   document.getElementById("app").innerHTML = `<div class="card">${content}</div>`;
 }
+// ------------------ TEST ENGINE ------------------
+
+function startTest(testName) {
+
+  if (!sessionState.demographicsLocked) {
+    sessionState.demographicsLocked = true;
+  }
+
+  const scale = scales[testName];
+
+  let progressBar = `
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  `;
+
+  let questionsHTML = "";
+
+  scale.questions.forEach((q, index) => {
+
+    let options = "";
+
+    for (let i = 1; i <= scale.likert; i++) {
+      options += `
+        <label>
+          <input type="radio" name="q${index}" value="${i}" onclick="updateProgress(${index + 1}, ${scale.items})">
+          ${scale.labels[i - 1]}
+        </label><br>
+      `;
+    }
+
+    questionsHTML += `
+      <div style="margin-bottom:20px;">
+        <p><strong>${index + 1}. ${q}</strong></p>
+        ${options}
+      </div>
+    `;
+  });
+
+  showCard(`
+    <h2>${testName.replace("_"," ")}</h2>
+    ${progressBar}
+    <form id="testForm">
+      ${questionsHTML}
+      <button type="button" onclick="submitTest('${testName}')">Submit Test</button>
+    </form>
+  `);
+}
+
+function updateProgress(answered, total) {
+  const radios = document.querySelectorAll("input[type=radio]:checked");
+  const answeredQuestions = new Set();
+
+  radios.forEach(r => {
+    answeredQuestions.add(r.name);
+  });
+
+  const percent = (answeredQuestions.size / total) * 100;
+  document.getElementById("progressFill").style.width = percent + "%";
+}
+
+function submitTest(testName) {
+
+  const scale = scales[testName];
+  const form = document.getElementById("testForm");
+  const data = new FormData(form);
+
+  let responses = [];
+  let missing = false;
+
+  for (let i = 0; i < scale.items; i++) {
+    const value = data.get("q" + i);
+    if (!value) {
+      missing = true;
+    }
+    responses.push(Number(value));
+  }
+
+  if (missing) {
+    alert("Please answer all questions.");
+    return;
+  }
+
+  // Reverse scoring
+  scale.reverse.forEach(index => {
+    const idx = index - 1;
+    responses[idx] = (scale.likert + 1) - responses[idx];
+  });
+
+  let totalScore = responses.reduce((a,b) => a + b, 0);
+
+  sessionState.scores[testName] = totalScore;
+  sessionState.completedTests.push(testName);
+
+  showResult(testName, totalScore);
+}
+
+function showResult(testName, score) {
+  showCard(`
+    <h2>${testName.replace("_"," ")} Result</h2>
+    <p>Your Score: ${score}</p>
+    <button onclick="renderDashboard()">Go Back to Dashboard</button>
+    <button onclick="endAssessment()">Finish Assessment</button>
+  `);
+}

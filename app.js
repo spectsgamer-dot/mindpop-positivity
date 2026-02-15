@@ -57,6 +57,26 @@ const scales = {
     "I can control impulsive emotional reactions.",
     "I express my emotions appropriately."
   ]
+},
+  Happiness: {
+  items: 4,
+  likert: 7,
+  reverse: [4],
+  labels: [
+    "Strongly Disagree",
+    "Disagree",
+    "Slightly Disagree",
+    "Neutral",
+    "Slightly Agree",
+    "Agree",
+    "Strongly Agree"
+  ],
+  questions: [
+    "In general, I consider myself a happy person.",
+    "Compared to most of my peers, I consider myself happy.",
+    "Some people are generally very happy. They enjoy life regardless of what is going on. To what extent does this describe you?",
+    "Some people are generally not very happy. Although they are not depressed, they never seem as happy as they might be. To what extent does this describe you?"
+  ]
 }
 };
 
@@ -216,6 +236,11 @@ function renderDashboard() {
             style="margin-left:10px;">
       Emotional Intelligence
     </button>
+
+    <button onclick="startTest('Happiness')" 
+        style="margin-left:10px;">
+      Happiness
+    </button>
   `);
 }
 
@@ -353,6 +378,31 @@ function submitTest(testName) {
         return;
     }
 
+  // ============================
+  // Happiness
+  // ============================
+  if (testName === "Happiness") {
+
+    const totalHappiness = responses.reduce((a, b) => a + b, 0);
+
+    if (!sessionState.completedTests.includes("Happiness")) {
+        sessionState.completedTests.push("Happiness");
+    }
+
+    render(`
+        <h2>Happiness Result</h2>
+        <p>Your Total Happiness Score: <strong>${totalHappiness}</strong> / 28</p>
+
+        <br><br>
+        <button onclick="renderDashboard()">Do Another Test</button>
+        <button onclick="renderFinalSummary()" 
+            style="margin-left:10px; background:#444;">
+            Finish Assessment
+        </button>
+    `);
+
+    return;
+}
 }
 
 function interpretTrait(score) {
@@ -372,6 +422,7 @@ function renderPersonalityResult(traits) {
     `;
   }
 
+  
 resultHTML += `
   <br><br>
   <button onclick="renderDashboard()">Do Another Test</button>

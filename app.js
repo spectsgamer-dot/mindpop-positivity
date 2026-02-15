@@ -223,3 +223,4 @@ function showResult(testName, score) {
     <button onclick="endAssessment()">Finish Assessment</button>
   `);
 }
+renderConsent();

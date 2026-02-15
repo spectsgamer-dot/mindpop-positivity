@@ -1,3 +1,5 @@
+/* ---------------- Base Layout ---------------- */
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -17,6 +19,8 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
+/* ---------------- Buttons ---------------- */
+
 button {
   padding: 10px 15px;
   border: none;
@@ -31,14 +35,20 @@ button:hover {
   background: #e0a800;
 }
 
-select, input {
+/* ---------------- Inputs ---------------- */
+
+select,
+input {
   width: 100%;
   padding: 8px;
   margin-top: 5px;
   margin-bottom: 15px;
   border-radius: 6px;
   border: 1px solid #ccc;
+  box-sizing: border-box;
 }
+
+/* ---------------- Progress Bar ---------------- */
 
 .progress-bar {
   height: 8px;
@@ -53,28 +63,28 @@ select, input {
   background: #f4b400;
   width: 0%;
 }
+
+/* ---------------- Likert Options ---------------- */
+
 .option-row {
   display: flex;
   align-items: center;
-  margin-bottom: 6px;
   gap: 10px;
+  margin-bottom: 8px;
+  width: auto;
 }
 
 .option-row input[type="radio"] {
   margin: 0;
-}
-.option-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
-  width: auto;
+  flex-shrink: 0;
 }
 
 .option-row span {
+  display: inline-block;
   width: auto;
 }
 
-.option-row input[type="radio"] {
-  flex-shrink: 0;
+/* Remove any global label width stretching */
+label {
+  width: auto;
 }

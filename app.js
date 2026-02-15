@@ -179,19 +179,53 @@ function submitTest(testName) {
     return;
   }
 
-  // reverse scoring
+  // Apply reverse scoring
   scale.reverse.forEach(index => {
     const idx = index - 1;
     responses[idx] = (scale.likert + 1) - responses[idx];
   });
 
-  const totalScore = responses.reduce((a,b) => a + b, 0);
+  if (testName === "Personality") {
 
-  render(`
-    <h2>Result</h2>
-    <p>Your Score: ${totalScore}</p>
+    const traits = {
+      Extraversion: responses[0] + responses[5],
+      Agreeableness: responses[1] + responses[6],
+      Conscientiousness: responses[2] + responses[7],
+      Neuroticism: responses[3] + responses[8],
+      Openness: responses[4] + responses[9]
+    };
+
+    sessionState.completedTests.push("Personality");
+    sessionState.personalityRaw = responses;
+    sessionState.personalityTraits = traits;
+
+    renderPersonalityResult(traits);
+  }
+}
+function interpretTrait(score) {
+  if (score <= 4) return "Low";
+  if (score <= 7) return "Moderate";
+  return "High";
+}
+
+function renderPersonalityResult(traits) {
+
+  let resultHTML = `<h2>Personality Profile</h2>`;
+
+  for (let trait in traits) {
+    const level = interpretTrait(traits[trait]);
+    resultHTML += `
+      <p><strong>${trait}</strong>: ${traits[trait]} 
+      (${level})</p>
+    `;
+  }
+
+  resultHTML += `
+    <br>
     <button onclick="renderDashboard()">Back to Dashboard</button>
-  `);
+  `;
+
+  render(resultHTML);
 }
 
 // ---------------- START ----------------

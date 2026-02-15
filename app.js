@@ -1,19 +1,16 @@
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxA5Bpoz5nQ0FwtL9v7WPKSBn3su_xqtXbLzJe74Lx8KtXWMRdreZXwyp3zNVeCUQTw/exec";
 
-// ------------------ SESSION STATE ------------------
+// ---------------- SESSION ----------------
 
 let sessionState = {
   anonId: "",
   demographics: {},
-  demographicsLocked: false,
-  completedTests: [],
-  scores: {}
+  completedTests: []
 };
 
-// ------------------ SCALE DEFINITIONS ------------------
+// ---------------- SCALE DEFINITIONS ----------------
 
 const scales = {
-
   Personality: {
     items: 10,
     likert: 5,
@@ -31,77 +28,10 @@ const scales = {
       "I see myself as someone who gets nervous easily.",
       "I see myself as someone who has an active imagination."
     ]
-  },
-
-  Emotional_Intelligence: {
-    items: 10,
-    likert: 5,
-    reverse: [],
-    labels: ["Strongly Disagree","Disagree","Neutral","Agree","Strongly Agree"],
-    questions: [
-      "I am aware of my emotions as I experience them.",
-      "I can regulate my emotions effectively.",
-      "I understand why I feel the way I do.",
-      "I can handle stressful situations calmly.",
-      "I am sensitive to others’ feelings.",
-      "I can motivate myself to overcome challenges.",
-      "I recognize emotions in others easily.",
-      "I can control my anger when needed.",
-      "I express my emotions appropriately.",
-      "I use emotions to enhance my performance."
-    ]
-  },
-
-  Happiness: {
-    items: 4,
-    likert: 7,
-    reverse: [4],
-    labels: ["1","2","3","4","5","6","7"],
-    questions: [
-      "In general, I consider myself a happy person.",
-      "Compared with most of my peers, I consider myself happy.",
-      "Some people are generally very happy. I am one of those people.",
-      "Some people are generally not very happy. I am not one of them."
-    ]
-  },
-
-  Stress: {
-    items: 4,
-    likert: 5,
-    reverse: [2,3],
-    labels: ["Never","Almost Never","Sometimes","Fairly Often","Very Often"],
-    questions: [
-      "In the last month, how often have you felt unable to control important things in your life?",
-      "In the last month, how often have you felt confident about handling personal problems?",
-      "In the last month, how often have you felt that things were going your way?",
-      "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?"
-    ]
-  },
-
-  Motivation: {
-    items: 12,
-    likert: 7,
-    reverse: [],
-    labels: ["Strongly Disagree","Disagree","Slightly Disagree","Neutral","Slightly Agree","Agree","Strongly Agree"],
-    questions: [
-      "I study because I enjoy learning new things.",
-      "I study because education is important for my goals.",
-      "I study because I would feel guilty if I did not.",
-      "I study because others expect me to.",
-      "I study because it is fun.",
-      "I study because it helps me achieve personal growth.",
-      "I study because I want recognition from others.",
-      "I study because of external rewards.",
-      "I study because I find it interesting.",
-      "I study because it aligns with my values.",
-      "I study because I feel pressure to succeed.",
-      "I study because I do not know why I am doing it."
-    ]
   }
-
 };
 
-// ------------------ UTILITY ------------------
+// ---------------- UTILITY ----------------
 
 function generateAnonId() {
   const now = new Date();
@@ -110,21 +40,76 @@ function generateAnonId() {
   return `${timestamp}-${random}`;
 }
 
-function clearApp() {
-  document.getElementById("app").innerHTML = "";
+function render(content) {
+  document.getElementById("app").innerHTML = `
+    <div class="card">${content}</div>
+  `;
 }
 
-function showCard(content) {
-  clearApp();
-  document.getElementById("app").innerHTML = `<div class="card">${content}</div>`;
+// ---------------- CONSENT ----------------
+
+function renderConsent() {
+  render(`
+    <h2>😊 Welcome to MindPop</h2>
+    <p>This assessment is anonymous and for academic analysis only.</p>
+    <button onclick="acceptConsent()">I Agree</button>
+  `);
 }
-// ------------------ TEST ENGINE ------------------
+
+function acceptConsent() {
+  sessionState.anonId = generateAnonId();
+  renderDemographics();
+}
+
+// ---------------- DEMOGRAPHICS ----------------
+
+function renderDemographics() {
+  render(`
+    <h2>Basic Details</h2>
+
+    <label>Name (Optional)</label>
+    <input id="name">
+
+    <label>Gender</label>
+    <select id="gender">
+      <option value="">Select</option>
+      <option>Male</option>
+      <option>Female</option>
+      <option>Other</option>
+    </select>
+
+    <button onclick="saveDemographics()">Continue</button>
+  `);
+}
+
+function saveDemographics() {
+  const gender = document.getElementById("gender").value;
+
+  if (!gender) {
+    alert("Please select gender.");
+    return;
+  }
+
+  sessionState.demographics = {
+    name: document.getElementById("name").value || "",
+    gender
+  };
+
+  renderDashboard();
+}
+
+// ---------------- DASHBOARD ----------------
+
+function renderDashboard() {
+  render(`
+    <h2>Assessment Dashboard</h2>
+    <button onclick="startTest('Personality')">Personality</button>
+  `);
+}
+
+// ---------------- TEST ENGINE ----------------
 
 function startTest(testName) {
-
-  if (!sessionState.demographicsLocked) {
-    sessionState.demographicsLocked = true;
-  }
 
   const scale = scales[testName];
 
@@ -143,39 +128,34 @@ function startTest(testName) {
     for (let i = 1; i <= scale.likert; i++) {
       options += `
         <label>
-          <input type="radio" name="q${index}" value="${i}" onclick="updateProgress(${index + 1}, ${scale.items})">
+          <input type="radio" name="q${index}" value="${i}" onclick="updateProgress(${scale.items})">
           ${scale.labels[i - 1]}
         </label><br>
       `;
     }
 
     questionsHTML += `
-      <div style="margin-bottom:20px;">
-        <p><strong>${index + 1}. ${q}</strong></p>
-        ${options}
-      </div>
+      <p><strong>${index + 1}. ${q}</strong></p>
+      ${options}
+      <br>
     `;
   });
 
-  showCard(`
-    <h2>${testName.replace("_"," ")}</h2>
+  render(`
+    <h2>${testName}</h2>
     ${progressBar}
     <form id="testForm">
       ${questionsHTML}
-      <button type="button" onclick="submitTest('${testName}')">Submit Test</button>
+      <button type="button" onclick="submitTest('${testName}')">Submit</button>
     </form>
   `);
 }
 
-function updateProgress(answered, total) {
-  const radios = document.querySelectorAll("input[type=radio]:checked");
-  const answeredQuestions = new Set();
-
-  radios.forEach(r => {
-    answeredQuestions.add(r.name);
-  });
-
-  const percent = (answeredQuestions.size / total) * 100;
+function updateProgress(total) {
+  const checked = document.querySelectorAll("input[type=radio]:checked");
+  const answered = new Set();
+  checked.forEach(r => answered.add(r.name));
+  const percent = (answered.size / total) * 100;
   document.getElementById("progressFill").style.width = percent + "%";
 }
 
@@ -189,11 +169,9 @@ function submitTest(testName) {
   let missing = false;
 
   for (let i = 0; i < scale.items; i++) {
-    const value = data.get("q" + i);
-    if (!value) {
-      missing = true;
-    }
-    responses.push(Number(value));
+    const val = data.get("q" + i);
+    if (!val) missing = true;
+    responses.push(Number(val));
   }
 
   if (missing) {
@@ -201,26 +179,21 @@ function submitTest(testName) {
     return;
   }
 
-  // Reverse scoring
+  // reverse scoring
   scale.reverse.forEach(index => {
     const idx = index - 1;
     responses[idx] = (scale.likert + 1) - responses[idx];
   });
 
-  let totalScore = responses.reduce((a,b) => a + b, 0);
+  const totalScore = responses.reduce((a,b) => a + b, 0);
 
-  sessionState.scores[testName] = totalScore;
-  sessionState.completedTests.push(testName);
-
-  showResult(testName, totalScore);
-}
-
-function showResult(testName, score) {
-  showCard(`
-    <h2>${testName.replace("_"," ")} Result</h2>
-    <p>Your Score: ${score}</p>
-    <button onclick="renderDashboard()">Go Back to Dashboard</button>
-    <button onclick="endAssessment()">Finish Assessment</button>
+  render(`
+    <h2>Result</h2>
+    <p>Your Score: ${totalScore}</p>
+    <button onclick="renderDashboard()">Back to Dashboard</button>
   `);
 }
+
+// ---------------- START ----------------
+
 renderConsent();

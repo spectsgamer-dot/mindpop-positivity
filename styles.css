@@ -85,3 +85,24 @@ select, input {
 .option-row label {
   cursor: pointer;
 }
+
+.support-card {
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.support-card button {
+    margin-right: 10px;
+    margin-top: 10px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+}
+
+.happiness { background: #fff8d6; }
+.stress { background: #ffe0e0; }
+.ei { background: #e0f0ff; }
+.motivation { background: #f1e4ff; }

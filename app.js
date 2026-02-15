@@ -56,14 +56,47 @@ function render(content) {
 function renderConsent() {
   render(`
     <h2>😊 Welcome to MindPop</h2>
-    <p>This assessment is anonymous and for academic analysis only.</p>
-    <button onclick="acceptConsent()">I Agree</button>
+
+    <p>
+      This assessment is anonymous and conducted for academic analysis
+      of student emotional wellbeing.
+    </p>
+
+    <p>
+      This is not a clinical diagnosis, but a brief self-awareness tool.
+    </p>
+
+    <div style="margin-top:20px;">
+      <button onclick="acceptConsent()">I Agree</button>
+      <button onclick="refuseConsent()" style="background:#ccc; color:black; margin-left:10px;">
+        I Do Not Agree
+      </button>
+    </div>
   `);
 }
 
 function acceptConsent() {
   sessionState.anonId = generateAnonId();
   renderDemographics();
+}
+function refuseConsent() {
+  render(`
+    <h2>😔 Consent Required</h2>
+
+    <p>
+      Participation requires informed consent.
+    </p>
+
+    <p>
+      If you wish to contribute to understanding student wellbeing,
+      you may choose to provide consent.
+    </p>
+
+    <button onclick="renderConsent()">Go Back</button>
+    <button onclick="acceptConsent()" style="margin-left:10px;">
+      Give Consent
+    </button>
+  `);
 }
 
 // ---------------- DEMOGRAPHICS ----------------
@@ -83,21 +116,59 @@ function renderDemographics() {
       <option>Other</option>
     </select>
 
+    <label>Department</label>
+    <select id="department">
+      <option value="">Select</option>
+      <option>Humanities & Social Sciences</option>
+      <option>Sciences</option>
+      <option>Paramedical Sciences</option>
+      <option>Pharmaceutical Science</option>
+      <option>Engineering</option>
+      <option>Computer Technology</option>
+      <option>Nursing</option>
+      <option>Physiotherapy & Rehabilitation</option>
+      <option>Commerce & Management</option>
+      <option>Agriculture Sciences & Technology</option>
+    </select>
+
+    <label>Pursuing</label>
+    <select id="pursuing">
+      <option value="">Select</option>
+      <option>Undergraduate</option>
+      <option>Postgraduate</option>
+    </select>
+
+    <label>Year</label>
+    <select id="year">
+      <option value="">Select</option>
+      <option>1st Year</option>
+      <option>2nd Year</option>
+      <option>3rd Year</option>
+      <option>4th Year</option>
+    </select>
+
     <button onclick="saveDemographics()">Continue</button>
   `);
 }
 
 function saveDemographics() {
-  const gender = document.getElementById("gender").value;
 
-  if (!gender) {
-    alert("Please select gender.");
+  const gender = document.getElementById("gender").value;
+  const department = document.getElementById("department").value;
+  const pursuing = document.getElementById("pursuing").value;
+  const year = document.getElementById("year").value;
+
+  if (!gender || !department || !pursuing || !year) {
+    alert("Please complete all required fields.");
     return;
   }
 
   sessionState.demographics = {
     name: document.getElementById("name").value || "",
-    gender
+    gender,
+    department,
+    pursuing,
+    year
   };
 
   renderDashboard();
@@ -211,9 +282,9 @@ const rowData = [
   sessionState.anonId,
   sessionState.demographics.name,
   sessionState.demographics.gender,
-  "",  // Department placeholder
-  "",  // Pursuing placeholder
-  "",  // Year placeholder
+sessionState.demographics.department,
+sessionState.demographics.pursuing,
+sessionState.demographics.year,
   ...responses,
   traits.Extraversion,
   traits.Agreeableness,

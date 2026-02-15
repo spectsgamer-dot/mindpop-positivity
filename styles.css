@@ -63,3 +63,18 @@ select, input {
 .option-row input[type="radio"] {
   margin: 0;
 }
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  width: auto;
+}
+
+.option-row span {
+  width: auto;
+}
+
+.option-row input[type="radio"] {
+  flex-shrink: 0;
+}

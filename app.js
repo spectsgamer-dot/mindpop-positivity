@@ -233,9 +233,9 @@ function renderDemographics() {
     <label>Pursuing</label>
 <select id="pursuing" onchange="handlePursuingChange()">
   <option value="">Select</option>
-  <option value="Student">Student</option>
-  <option value="Faculty">Faculty</option>
-  <option value="Other">Other</option>
+  <option value="Undergraduate">Student</option>
+  <option value="Posgraduate">Faculty</option>
+  <option value="faculty">Other</option>
 </select>
 
 <div id="facultyExperienceContainer" style="display:none;">

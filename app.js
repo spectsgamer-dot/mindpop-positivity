@@ -314,6 +314,17 @@ function renderDashboard() {
         `;
     }
 
+    // 🔥 THIS MUST BE OUTSIDE TEMPLATE
+    let restartButton = "";
+    if (completed === 5) {
+        restartButton = `
+            <br><br>
+            <button onclick="restartAssessment()" style="background:#444;">
+                Start New Assessment
+            </button>
+        `;
+    }
+
     render(`
         <h2>Assessment Dashboard</h2>
         <p>Completed Tests: ${completed}/5</p>
@@ -323,16 +334,6 @@ function renderDashboard() {
         ${testButton("Happiness")}
         ${testButton("Stress")}
         ${testButton("Motivation")}
-        let restartButton = "";
-
-if (sessionState.completedTests.length === 5) {
-  restartButton = `
-    <br><br>
-    <button onclick="restartAssessment()" style="background:#444;">
-      Start New Assessment
-    </button>
-  `;
-}
 
         <br><br>
 
@@ -344,6 +345,7 @@ if (sessionState.completedTests.length === 5) {
                </button>`
             : ""
         }
+
         ${restartButton}
     `);
 }

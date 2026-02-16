@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s//exec";
+const WEB_APP_URL = "https://script.google.com/macros/c";
 
 // ---------------- SESSION ----------------
 

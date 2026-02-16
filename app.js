@@ -484,22 +484,12 @@ function submitTest(testName) {
     sessionState.results.Emotional_Intelligence
 );
    let level = "";
-let interpretation = "";
 
-// 10 items, Likert 1–5 → range = 10–50
+if (totalEI <= 25) level = "Lower Range";
+else if (totalEI <= 38) level = "Moderate Range";
+else level = "Higher Range";
 
-if (totalEI <= 25) {
-    level = "Lower Range";
-    interpretation = "You may currently find it challenging to identify, regulate, or express emotions consistently. Emotional intelligence is a developable capacity, and reflective practices or skill-based training can significantly enhance it over time.";
-}
-else if (totalEI <= 38) {
-    level = "Moderate Range";
-    interpretation = "You demonstrate a functional ability to understand and manage emotions in everyday situations. There may be room to strengthen emotional awareness and interpersonal sensitivity in complex contexts.";
-}
-else {
-    level = "Higher Range";
-    interpretation = "You likely demonstrate strong emotional awareness and effective regulation strategies. This may support leadership, collaboration, and adaptive coping under stress.";
-}
+const interpretation = generateEINarrative(totalEI);
 
 render(`
 <h2>Emotional Intelligence Profile</h2>
@@ -536,22 +526,12 @@ Finish Assessment
     const insight = getShortInsight("Happiness", sessionState.results.Happiness);
 
 let level = "";
-let interpretation = "";
 
-// Range: 4 – 28
+if (totalHappiness <= 12) level = "Lower Range";
+else if (totalHappiness <= 20) level = "Moderate Range";
+else level = "Higher Range";
 
-if (totalHappiness <= 12) {
-    level = "Lower Range";
-    interpretation = "Your responses suggest reduced subjective happiness at this time. This does not indicate a diagnosis, but it may reflect current life strain, reduced enjoyment, or emotional fatigue.";
-}
-else if (totalHappiness <= 20) {
-    level = "Moderate Range";
-    interpretation = "Your responses indicate a balanced level of life satisfaction. You may experience both positive and stressful periods in typical proportions.";
-}
-else {
-    level = "Higher Range";
-    interpretation = "Your responses suggest a strong sense of subjective happiness and life satisfaction at present.";
-}
+const interpretation = generateHappinessNarrative(totalHappiness);
 
 render(`
 <h2>Subjective Happiness Profile</h2>
@@ -588,20 +568,12 @@ Finish Assessment
   const insight = getShortInsight("Stress", sessionState.results.Stress);
 
 let level = "";
-let interpretation = "";
 
-if (totalStress <= 4) {
-    level = "Low Stress";
-    interpretation = "Your responses suggest that you are currently experiencing minimal perceived stress. You likely feel reasonably in control of daily demands.";
-}
-else if (totalStress <= 9) {
-    level = "Moderate Stress";
-    interpretation = "Your responses indicate a typical level of perceived stress. Occasional strain may occur, but coping resources appear functional.";
-}
-else {
-    level = "Elevated Stress";
-    interpretation = "Your responses suggest heightened perceived stress. You may currently feel overwhelmed or experience difficulty managing demands.";
-}
+if (totalStress <= 4) level = "Low Stress";
+else if (totalStress <= 9) level = "Moderate Stress";
+else level = "Elevated Stress";
+
+const interpretation = generateStressNarrative(totalStress);
 
 render(`
 <h2>Perceived Stress Profile</h2>
@@ -659,20 +631,9 @@ Finish Assessment
     const amotivationLevel = classifyMotivation(amotivation);
 
     // 🔹 Clinical Narrative
-    let narrative = "";
-
-    if (amotivationLevel === "High") {
-        narrative = "Your responses indicate elevated amotivation. This may reflect reduced direction, lower engagement, or academic fatigue. Exploring personal meaning and structured goal-setting could be beneficial.";
-    }
-    else if (intrinsicLevel === "High" && amotivationLevel === "Low") {
-        narrative = "You appear strongly intrinsically motivated. Your engagement is likely driven by curiosity, interest, and internal satisfaction rather than external pressure.";
-    }
-    else if (extrinsicLevel === "High" && intrinsicLevel !== "High") {
-        narrative = "Your motivation appears more externally driven. Performance expectations, outcomes, or rewards may influence your engagement patterns.";
-    }
-    else {
-        narrative = "Your motivation profile appears balanced, combining internal interest with practical external goals.";
-    }
+   const narrative = generateMotivationNarrative(
+    sessionState.results.Motivation
+);
 
     render(`
         <h2>Motivation Profile</h2>
@@ -975,9 +936,24 @@ function renderFinalSummary() {
 
 html += `
 <h3>Psychological Profile Overview</h3>
+Strength Indicators
+Growth & Development Areas
 <p>${fullNarrative}</p>
 `;
+const report = generateStrengthWeaknessReport();
 
+html += `
+<h3>Strength Indicators</h3>
+<ul>
+${report.strengths.length ? report.strengths.map(s => `<li>${s}</li>`).join("") : "<li>No prominent strengths identified in assessed domains.</li>"}
+</ul>
+
+<h3>Growth & Development Areas</h3>
+<ul>
+${report.growth.length ? report.growth.map(g => `<li>${g}</li>`).join("") : "<li>No major developmental flags detected.</li>"}
+</ul>
+`;
+  
   if (supportBlocks !== "") {
   html += `
   <h3>Support & Reflection</h3>
@@ -1101,6 +1077,74 @@ function generateFullNarrative() {
 
     return narrative;
 }
+function generateStrengthWeaknessReport() {
+
+    let strengths = [];
+    let growth = [];
+
+    const p = sessionState.results.Personality;
+    const ei = sessionState.results.Emotional_Intelligence;
+    const h = sessionState.results.Happiness;
+    const s = sessionState.results.Stress;
+    const m = sessionState.results.Motivation;
+
+    // Personality Strengths
+    if (p) {
+        if (p.Conscientiousness >= 8)
+            strengths.push("Strong task discipline and goal orientation.");
+
+        if (p.Agreeableness >= 8)
+            strengths.push("Cooperative and empathetic interpersonal style.");
+
+        if (p.Openness >= 8)
+            strengths.push("Curiosity and openness to new ideas.");
+
+        if (p.Neuroticism >= 8)
+            growth.push("Emotional sensitivity under stress may require regulation strategies.");
+
+        if (p.Conscientiousness <= 4)
+            growth.push("Developing structured planning habits could improve consistency.");
+    }
+
+    // EI
+    if (ei) {
+        if (ei.total >= 40)
+            strengths.push("Strong emotional awareness and regulation skills.");
+
+        if (ei.total <= 25)
+            growth.push("Emotional intelligence skills may benefit from deliberate development.");
+    }
+
+    // Happiness
+    if (h) {
+        if (h.total >= 22)
+            strengths.push("Positive subjective wellbeing indicators.");
+
+        if (h.total <= 12)
+            growth.push("Enhancing daily positive reinforcement and social engagement may improve wellbeing.");
+    }
+
+    // Stress
+    if (s) {
+        if (s.total <= 4)
+            strengths.push("Low perceived stress and effective coping patterns.");
+
+        if (s.total >= 12)
+            growth.push("Elevated perceived stress may benefit from structured stress management practices.");
+    }
+
+    // Motivation
+    if (m) {
+        if (m.intrinsic > m.extrinsic && m.intrinsic > m.amotivation)
+            strengths.push("Strong intrinsic motivation patterns.");
+
+        if (m.amotivation > m.intrinsic && m.amotivation > m.extrinsic)
+            growth.push("Reduced motivational activation may require exploration of goals and meaning.");
+    }
+
+    return { strengths, growth };
+}
+
 function generatePersonalityNarrative(traits) {
 
     let narrative = "";
@@ -1159,6 +1203,55 @@ function generatePersonalityNarrative(traits) {
     narrative += "These patterns describe tendencies rather than fixed traits and may shift across contexts.";
 
     return narrative;
+}
+function generateEINarrative(totalEI) {
+
+    if (totalEI <= 25)
+        return "You may currently find emotional identification and regulation challenging. These skills are highly developable through reflective practice and feedback.";
+
+    if (totalEI <= 38)
+        return "You demonstrate functional emotional awareness in everyday situations, with potential for further refinement in complex interpersonal contexts.";
+
+    return "You likely possess strong emotional awareness and regulation skills, supporting adaptive coping and collaborative functioning.";
+}
+function generateHappinessNarrative(totalHappiness) {
+
+    if (totalHappiness <= 12)
+        return "Your responses suggest reduced subjective wellbeing at this time. This may reflect temporary strain rather than a fixed state.";
+
+    if (totalHappiness <= 20)
+        return "You demonstrate moderate life satisfaction, with balanced positive and stressful experiences.";
+
+    return "Your responses indicate strong subjective wellbeing and life satisfaction.";
+}
+function generateStressNarrative(totalStress) {
+  
+    return "TEST STRESS NARRATIVE ACTIVE";
+
+
+
+    if (totalStress <= 4)
+        return "You currently report low perceived stress and appear to manage demands effectively.";
+
+    if (totalStress <= 9)
+        return "Your perceived stress level appears within typical adaptive range.";
+
+    return "Your responses suggest elevated perceived stress, which may impact concentration, mood, and recovery if sustained.";
+}
+function generateMotivationNarrative(data) {
+
+    const { intrinsic, extrinsic, amotivation } = data;
+
+    if (amotivation > intrinsic && amotivation > extrinsic)
+        return "Motivational activation appears reduced. Reconnecting with autonomy and personal meaning may be beneficial.";
+
+    if (intrinsic > extrinsic && intrinsic > amotivation)
+        return "Your motivation appears primarily internally driven by interest and curiosity.";
+
+    if (extrinsic > intrinsic)
+        return "External incentives and performance outcomes may significantly influence your engagement patterns.";
+
+    return "Your motivation profile reflects a balanced integration of internal and external drivers.";
 }
 
 // ---------------- START ----------------

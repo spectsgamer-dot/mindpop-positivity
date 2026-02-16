@@ -231,20 +231,36 @@ function renderDemographics() {
     </select>
 
     <label>Pursuing</label>
-    <select id="pursuing">
-      <option value="">Select</option>
-      <option>Undergraduate</option>
-      <option>Postgraduate</option>
-    </select>
+<select id="pursuing" onchange="handlePursuingChange()">
+  <option value="">Select</option>
+  <option value="Student">Student</option>
+  <option value="Faculty">Faculty</option>
+  <option value="Other">Other</option>
+</select>
 
-    <label>Year</label>
-    <select id="year">
-      <option value="">Select</option>
-      <option>1st Year</option>
-      <option>2nd Year</option>
-      <option>3rd Year</option>
-      <option>4th Year</option>
-    </select>
+<div id="facultyExperienceContainer" style="display:none;">
+  <label>Experience as Faculty</label>
+  <select id="facultyExperience">
+    <option value="">Select</option>
+    <option>0–2 Years</option>
+    <option>3–5 Years</option>
+    <option>6–10 Years</option>
+    <option>10+ Years</option>
+  </select>
+</div>
+
+    <div id="yearContainer">
+  <label>Year</label>
+  <select id="year">
+    <option value="">Select</option>
+    <option>1st Year</option>
+    <option>2nd Year</option>
+    <option>3rd Year</option>
+    <option>4th Year</option>
+    <option>5th Year</option>
+  </select>
+</div>
+
 
     <button onclick="saveDemographics()">Continue</button>
   `);
@@ -263,12 +279,12 @@ function saveDemographics() {
   }
 
   sessionState.demographics = {
-    name: document.getElementById("name").value || "",
-    gender,
-    department,
-    pursuing,
-    year
-  };
+  name: document.getElementById("name").value,
+  gender: document.getElementById("gender").value,
+  pursuing: document.getElementById("pursuing").value,
+  facultyExperience: document.getElementById("facultyExperience")?.value || "",
+  year: document.getElementById("year").value
+};
 
   renderDashboard();
 }
@@ -307,6 +323,16 @@ function renderDashboard() {
         ${testButton("Happiness")}
         ${testButton("Stress")}
         ${testButton("Motivation")}
+        let restartButton = "";
+
+if (sessionState.completedTests.length === 5) {
+  restartButton = `
+    <br><br>
+    <button onclick="restartAssessment()" style="background:#444;">
+      Start New Assessment
+    </button>
+  `;
+}
 
         <br><br>
 
@@ -318,6 +344,7 @@ function renderDashboard() {
                </button>`
             : ""
         }
+        ${restartButton}
     `);
 }
 
@@ -795,6 +822,41 @@ function downloadReport() {
   a.click();
 
   URL.revokeObjectURL(url);
+}
+function restartAssessment() {
+
+  sessionState = {
+    anonId: "",
+    demographics: {},
+    completedTests: [],
+    results: {
+      Personality: null,
+      Emotional_Intelligence: null,
+      Happiness: null,
+      Stress: null,
+      Motivation: null
+    }
+  };
+
+  renderConsent();
+}
+function handlePursuingChange() {
+
+  const pursuing = document.getElementById("pursuing").value;
+
+  const facultyContainer = document.getElementById("facultyExperienceContainer");
+  const yearContainer = document.getElementById("yearContainer");
+
+  if (pursuing === "Faculty") {
+
+    facultyContainer.style.display = "block";
+    yearContainer.style.display = "none";
+
+  } else {
+
+    facultyContainer.style.display = "none";
+    yearContainer.style.display = "block";
+  }
 }
 // ---------------- START ----------------
 

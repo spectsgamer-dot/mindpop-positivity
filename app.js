@@ -535,12 +535,32 @@ Finish Assessment
   };
     const insight = getShortInsight("Happiness", sessionState.results.Happiness);
 
-render(`
-<h2>Happiness Result</h2>
-<p>Your Total Happiness Score: <strong>${totalHappiness}</strong> / 28</p>
+let level = "";
+let interpretation = "";
 
-<p style="margin-top:10px; font-style:italic;">
-${insight}
+// Range: 4 – 28
+
+if (totalHappiness <= 12) {
+    level = "Lower Range";
+    interpretation = "Your responses suggest reduced subjective happiness at this time. This does not indicate a diagnosis, but it may reflect current life strain, reduced enjoyment, or emotional fatigue.";
+}
+else if (totalHappiness <= 20) {
+    level = "Moderate Range";
+    interpretation = "Your responses indicate a balanced level of life satisfaction. You may experience both positive and stressful periods in typical proportions.";
+}
+else {
+    level = "Higher Range";
+    interpretation = "Your responses suggest a strong sense of subjective happiness and life satisfaction at present.";
+}
+
+render(`
+<h2>Subjective Happiness Profile</h2>
+
+<p><strong>Total Score:</strong> ${totalHappiness} / 28</p>
+<p><strong>Level:</strong> ${level}</p>
+
+<p style="margin-top:10px;">
+${interpretation}
 </p>
 
 <br><br>
@@ -549,7 +569,6 @@ ${insight}
 Finish Assessment
 </button>
 `);
-
     return;
 }
   // =======================
@@ -568,12 +587,30 @@ Finish Assessment
     };
   const insight = getShortInsight("Stress", sessionState.results.Stress);
 
-render(`
-<h2>Perceived Stress Result</h2>
-<p>Your Total Stress Score: <strong>${totalStress}</strong></p>
+let level = "";
+let interpretation = "";
 
-<p style="margin-top:10px; font-style:italic;">
-${insight}
+if (totalStress <= 4) {
+    level = "Low Stress";
+    interpretation = "Your responses suggest that you are currently experiencing minimal perceived stress. You likely feel reasonably in control of daily demands.";
+}
+else if (totalStress <= 9) {
+    level = "Moderate Stress";
+    interpretation = "Your responses indicate a typical level of perceived stress. Occasional strain may occur, but coping resources appear functional.";
+}
+else {
+    level = "Elevated Stress";
+    interpretation = "Your responses suggest heightened perceived stress. You may currently feel overwhelmed or experience difficulty managing demands.";
+}
+
+render(`
+<h2>Perceived Stress Profile</h2>
+
+<p><strong>Total Score:</strong> ${totalStress} / 16</p>
+<p><strong>Level:</strong> ${level}</p>
+
+<p style="margin-top:10px;">
+${interpretation}
 </p>
 
 <br><br>
@@ -582,6 +619,7 @@ ${insight}
 Finish Assessment
 </button>
 `);
+
 
     return;
 }
@@ -590,47 +628,68 @@ Finish Assessment
   // =======================
   if (testName === "Motivation") {
 
-    const intrinsic = responses[0] + responses[5] + responses[6];
+    // SWEIMS 12 items
+    // Assume responses array length = 12
+    // 1–5 Likert scale
 
-    const identified = responses[1] + responses[10];
-    const introjected = responses[2] + responses[7];
-    const external = responses[3] + responses[8];
+    const intrinsic = responses[0] + responses[1] + responses[2] + responses[3];
+    const extrinsic = responses[4] + responses[5] + responses[6] + responses[7];
+    const amotivation = responses[8] + responses[9] + responses[10] + responses[11];
 
-    const extrinsic = identified + introjected + external;
-
-    const amotivation = responses[4] + responses[9] + responses[11];
-
+    // 🔹 Store results
     if (!sessionState.completedTests.includes("Motivation")) {
         sessionState.completedTests.push("Motivation");
     }
 
     sessionState.results.Motivation = {
-    intrinsic,
-    extrinsic,
-    amotivation
+        intrinsic,
+        extrinsic,
+        amotivation
     };
-    const insight = getShortInsight(
-    "Motivation",
-    sessionState.results.Motivation
-);
+
+    // 🔹 Level Classification
+    function classifyMotivation(score) {
+        if (score <= 8) return "Low";
+        if (score <= 14) return "Moderate";
+        return "High";
+    }
+
+    const intrinsicLevel = classifyMotivation(intrinsic);
+    const extrinsicLevel = classifyMotivation(extrinsic);
+    const amotivationLevel = classifyMotivation(amotivation);
+
+    // 🔹 Clinical Narrative
+    let narrative = "";
+
+    if (amotivationLevel === "High") {
+        narrative = "Your responses indicate elevated amotivation. This may reflect reduced direction, lower engagement, or academic fatigue. Exploring personal meaning and structured goal-setting could be beneficial.";
+    }
+    else if (intrinsicLevel === "High" && amotivationLevel === "Low") {
+        narrative = "You appear strongly intrinsically motivated. Your engagement is likely driven by curiosity, interest, and internal satisfaction rather than external pressure.";
+    }
+    else if (extrinsicLevel === "High" && intrinsicLevel !== "High") {
+        narrative = "Your motivation appears more externally driven. Performance expectations, outcomes, or rewards may influence your engagement patterns.";
+    }
+    else {
+        narrative = "Your motivation profile appears balanced, combining internal interest with practical external goals.";
+    }
 
     render(`
-<h2>Motivation Profile</h2>
+        <h2>Motivation Profile</h2>
 
-<p><strong>Intrinsic Motivation:</strong> ${intrinsic}</p>
-<p><strong>Extrinsic Motivation:</strong> ${extrinsic}</p>
-<p><strong>Amotivation:</strong> ${amotivation}</p>
+        <p><strong>Intrinsic Motivation:</strong> ${intrinsic} (${intrinsicLevel})</p>
+        <p><strong>Extrinsic Motivation:</strong> ${extrinsic} (${extrinsicLevel})</p>
+        <p><strong>Amotivation:</strong> ${amotivation} (${amotivationLevel})</p>
 
-<p style="margin-top:10px; font-style:italic;">
-${insight}
-</p>
+        <br>
+        <p>${narrative}</p>
 
-<br><br>
-<button onclick="renderDashboard()">Do Another Test</button>
-<button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
-Finish Assessment
-</button>
-`);
+        <br><br>
+        <button onclick="renderDashboard()">Do Another Test</button>
+        <button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
+        Finish Assessment
+        </button>
+    `);
 
     return;
 }

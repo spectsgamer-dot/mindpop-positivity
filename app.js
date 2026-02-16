@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/c";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxA5Bpoz5nQ0FwtL9v7WPKSBn3su_xqtXbLzJe74Lx8KtXWMRdreZXwyp3zNVeCUQTw/exec";
 
 // ---------------- SESSION ----------------
 
@@ -953,7 +953,7 @@ ${report.strengths.map(s => `<li>${s}</li>`).join("")}
 <div class="summary-title">Growth & Development Areas</div>
 <div class="summary-text">
 <ul>
-${report.weaknesses.map(w => `<li>${w}</li>`).join("")}
+${report.growth.map(w => `<li>${w}</li>`).join("")}
 </ul>
 </div>
 </div>

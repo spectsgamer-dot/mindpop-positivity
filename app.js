@@ -233,7 +233,7 @@ render(`
 
 <div class="form-group">
 <label>Pursuing</label>
-<select id="pursuing">
+<select id="pursuing" onchange="handlePursuingChange()">
 <option value="">Select</option>
 <option>Undergraduate</option>
 <option>Postgraduate</option>
@@ -241,7 +241,7 @@ render(`
 </select>
 </div>
 
-<div class="form-group">
+<div class="form-group" id="yearContainer">
 <label>Year</label>
 <select id="year">
 <option value="">Select</option>
@@ -249,8 +249,12 @@ render(`
 <option>2nd Year</option>
 <option>3rd Year</option>
 <option>4th Year</option>
-<option>Experience Faculty</option>
 </select>
+</div>
+
+<div class="form-group" id="facultyContainer" style="display:none;">
+<label>Years of Experience</label>
+<input type="text" id="facultyExperience" placeholder="e.g., 5 years">
 </div>
 
 <div class="form-full">
@@ -261,34 +265,41 @@ render(`
 `);
 }
 
+// Fix: Update saveDemographics to properly validate and save data
 function saveDemographics() {
 
   const gender = document.getElementById("gender").value;
   const department = document.getElementById("department").value;
   const pursuing = document.getElementById("pursuing").value;
   const year = document.getElementById("year").value;
+  const facultyExperience = document.getElementById("facultyExperience").value;
 
   if (!gender || !department || !pursuing) {
     alert("Please complete all required fields.");
     return;
-}
+  }
 
-if (pursuing !== "Faculty" && !year) {
+  if (pursuing !== "Faculty" && !year) {
     alert("Please select Year.");
     return;
-}
+  }
+
+  if (pursuing === "Faculty" && !facultyExperience) {
+    alert("Please enter years of experience.");
+    return;
+  }
 
   sessionState.demographics = {
-  name: document.getElementById("name").value,
-  gender: document.getElementById("gender").value,
-  pursuing: document.getElementById("pursuing").value,
-  facultyExperience: document.getElementById("facultyExperience")?.value || "",
-  year: document.getElementById("year").value
-};
+    name: document.getElementById("name").value,
+    gender: gender,
+    pursuing: pursuing,
+    department: department,
+    facultyExperience: pursuing === "Faculty" ? facultyExperience : "",
+    year: pursuing !== "Faculty" ? year : ""
+  };
 
   renderDashboard();
 }
-
 // ---------------- DASHBOARD ----------------
 
 function renderDashboard() {

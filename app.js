@@ -492,7 +492,7 @@ function submitTest(testName) {
   // ======================
   if (testName === "Stress") {
 
-    const totalStress = responses.reduce((a, b) => a + b, 0);
+    const totalStress = responses.reduce((a, b) => a + (b - 1), 0);
 
     if (!sessionState.completedTests.includes("Stress")) {
         sessionState.completedTests.push("Stress");
@@ -591,7 +591,7 @@ function renderFinalSummary() {
 
     const r = sessionState.results;
 
-    let html = `<h2>Assessment Completed 😆🎉</h2>`;
+    let html = `<h2>Assessment Summary 📊</h2>`;
     let supportBlocks = "";
     let counsellingShown = false;
 
@@ -651,8 +651,8 @@ function renderFinalSummary() {
     html += `
     <br>
     <button onclick="renderDashboard()">Back to Dashboard</button>
-    <button onclick="resetAssessment()" style="margin-left:10px;background:#444;">
-    Start New Assessment
+    <button onclick="downloadReport()" style="margin-left:10px;background:#444;">
+    Download Report
     </button>
     `;
 
@@ -756,7 +756,46 @@ function resetAssessment() {
     };
     renderDashboard();
 }
+function downloadReport() {
+  let report = "MindPop Psychological Assessment Report\n\n";
 
+  if (sessionState.results.Personality) {
+    report += "Personality:\n";
+    for (let trait in sessionState.results.Personality) {
+      report += `${trait}: ${sessionState.results.Personality[trait]}\n`;
+    }
+    report += "\n";
+  }
+
+  if (sessionState.results.Emotional_Intelligence) {
+    report += `Emotional Intelligence Total: ${sessionState.results.Emotional_Intelligence.total}\n\n`;
+  }
+
+  if (sessionState.results.Happiness) {
+    report += `Happiness Total: ${sessionState.results.Happiness.total}\n\n`;
+  }
+
+  if (sessionState.results.Stress) {
+    report += `Stress Total: ${sessionState.results.Stress.total}\n\n`;
+  }
+
+  if (sessionState.results.Motivation) {
+    report += "Motivation:\n";
+    report += `Intrinsic: ${sessionState.results.Motivation.intrinsic}\n`;
+    report += `Extrinsic: ${sessionState.results.Motivation.extrinsic}\n`;
+    report += `Amotivation: ${sessionState.results.Motivation.amotivation}\n\n`;
+  }
+
+  const blob = new Blob([report], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "MindPop_Report.txt";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
 // ---------------- START ----------------
 
 renderConsent();

@@ -1088,58 +1088,85 @@ function generateStrengthWeaknessReport() {
     const s = sessionState.results.Stress;
     const m = sessionState.results.Motivation;
 
-    // Personality Strengths
+    // ---------------- Personality ----------------
+
     if (p) {
-        if (p.Conscientiousness >= 8)
-            strengths.push("Strong task discipline and goal orientation.");
 
-        if (p.Agreeableness >= 8)
-            strengths.push("Cooperative and empathetic interpersonal style.");
+        if (p.Conscientiousness >= 8) {
+            strengths.push("Strong task discipline and goal orientation. This often supports academic reliability, structured planning, and consistent follow-through.");
+        }
 
-        if (p.Openness >= 8)
-            strengths.push("Curiosity and openness to new ideas.");
+        if (p.Agreeableness >= 8) {
+            strengths.push("Cooperative and empathetic interpersonal style. This can enhance teamwork, peer relationships, and conflict resolution.");
+        }
 
-        if (p.Neuroticism >= 8)
-            growth.push("Emotional sensitivity under stress may require regulation strategies.");
+        if (p.Openness >= 8) {
+            strengths.push("Curiosity and openness to ideas. This supports creativity, adaptive thinking, and intellectual exploration.");
+        }
 
-        if (p.Conscientiousness <= 4)
-            growth.push("Developing structured planning habits could improve consistency.");
+        if (p.Neuroticism >= 8) {
+            growth.push("Heightened emotional sensitivity under stress. Developing emotional regulation strategies may improve resilience during demanding periods.");
+        }
+
+        if (p.Conscientiousness <= 4) {
+            growth.push("Lower task structure orientation. Building planning systems and time-management routines may enhance performance stability.");
+        }
     }
 
-    // EI
+    // ---------------- Emotional Intelligence ----------------
+
     if (ei) {
-        if (ei.total >= 40)
-            strengths.push("Strong emotional awareness and regulation skills.");
 
-        if (ei.total <= 25)
-            growth.push("Emotional intelligence skills may benefit from deliberate development.");
+        if (ei.total >= 40) {
+            strengths.push("Strong emotional awareness and regulation. This may support leadership potential, interpersonal trust, and adaptive coping.");
+        }
+
+        if (ei.total <= 25) {
+            growth.push("Emotional processing skills may benefit from intentional development. Structured reflection and feedback can strengthen this capacity.");
+        }
     }
 
-    // Happiness
+    // ---------------- Happiness ----------------
+
     if (h) {
-        if (h.total >= 22)
-            strengths.push("Positive subjective wellbeing indicators.");
 
-        if (h.total <= 12)
-            growth.push("Enhancing daily positive reinforcement and social engagement may improve wellbeing.");
+        if (h.total >= 22) {
+            strengths.push("Positive subjective wellbeing indicators. This often correlates with optimism, persistence, and social engagement.");
+        }
+
+        if (h.total <= 12) {
+            growth.push("Reduced subjective wellbeing at present. Increasing positive reinforcement, social support, or activity engagement may be beneficial.");
+        }
     }
 
-    // Stress
+    // ---------------- Stress ----------------
+
     if (s) {
-        if (s.total <= 4)
-            strengths.push("Low perceived stress and effective coping patterns.");
 
-        if (s.total >= 12)
-            growth.push("Elevated perceived stress may benefit from structured stress management practices.");
+        if (s.total <= 4) {
+            strengths.push("Low perceived stress levels. Suggests effective coping strategies and psychological stability under routine demands.");
+        }
+
+        if (s.total >= 12) {
+            growth.push("Elevated perceived stress. Prolonged strain may affect concentration, sleep, and emotional balance if unaddressed.");
+        }
     }
 
-    // Motivation
-    if (m) {
-        if (m.intrinsic > m.extrinsic && m.intrinsic > m.amotivation)
-            strengths.push("Strong intrinsic motivation patterns.");
+    // ---------------- Motivation ----------------
 
-        if (m.amotivation > m.intrinsic && m.amotivation > m.extrinsic)
-            growth.push("Reduced motivational activation may require exploration of goals and meaning.");
+    if (m) {
+
+        if (m.intrinsic > m.extrinsic && m.intrinsic > m.amotivation) {
+            strengths.push("Strong intrinsic motivation. Engagement appears driven by internal curiosity and personal interest, which supports deeper learning.");
+        }
+
+        if (m.amotivation > m.intrinsic && m.amotivation > m.extrinsic) {
+            growth.push("Reduced motivational activation. Clarifying goals and reconnecting with personal meaning may restore engagement.");
+        }
+
+        if (m.extrinsic > m.intrinsic && m.extrinsic > m.amotivation) {
+            strengths.push("Clear responsiveness to external structure. Deadlines and expectations may effectively support performance.");
+        }
     }
 
     return { strengths, growth };
@@ -1225,10 +1252,6 @@ function generateHappinessNarrative(totalHappiness) {
     return "Your responses indicate strong subjective wellbeing and life satisfaction.";
 }
 function generateStressNarrative(totalStress) {
-  
-    return "TEST STRESS NARRATIVE ACTIVE";
-
-
 
     if (totalStress <= 4)
         return "You currently report low perceived stress and appear to manage demands effectively.";

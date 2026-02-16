@@ -927,8 +927,6 @@ function renderFinalSummary() {
   `;
   }
 
-  const fullNarrative = generateFullNarrative();
-
 const fullNarrative = generateFullNarrative();
 const report = generateStrengthWeaknessReport();
 

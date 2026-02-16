@@ -725,7 +725,14 @@ function renderPersonalityResult(traits) {
         </div>
     `;
 }
-  
+  const personalityNarrative = generatePersonalityNarrative(traits);
+
+resultHTML += `
+<br>
+<h3>Profile Interpretation</h3>
+<p>${personalityNarrative}</p>
+`;
+
 resultHTML += `
   <br><br>
   <button onclick="renderDashboard()">Do Another Test</button>
@@ -1012,6 +1019,65 @@ function generateFullNarrative() {
     if (narrative === "") {
         narrative = "Your responses suggest generally adaptive psychological functioning across assessed domains.";
     }
+
+    return narrative;
+}
+function generatePersonalityNarrative(traits) {
+
+    let narrative = "";
+
+    const E = traits.Extraversion;
+    const A = traits.Agreeableness;
+    const C = traits.Conscientiousness;
+    const N = traits.Neuroticism;
+    const O = traits.Openness;
+
+    // Extraversion
+    if (E >= 8) {
+        narrative += "You demonstrate strong social energy and are likely comfortable engaging with others in dynamic settings. ";
+    } else if (E <= 4) {
+        narrative += "You may prefer quieter environments and derive energy from reflection rather than high social stimulation. ";
+    } else {
+        narrative += "You appear balanced in social engagement, adapting comfortably to both group and individual settings. ";
+    }
+
+    // Agreeableness
+    if (A >= 8) {
+        narrative += "Your responses suggest a cooperative and empathetic interpersonal style. ";
+    } else if (A <= 4) {
+        narrative += "You may prioritize objectivity and independence over interpersonal harmony in decision-making. ";
+    } else {
+        narrative += "You likely balance assertiveness with consideration for others. ";
+    }
+
+    // Conscientiousness
+    if (C >= 8) {
+        narrative += "You appear highly organized and goal-directed, with strong self-regulatory capacity. ";
+    } else if (C <= 4) {
+        narrative += "Structure and routine may not be your primary orientation, and flexibility may characterize your approach. ";
+    } else {
+        narrative += "You likely show moderate planning and reliability in academic or work tasks. ";
+    }
+
+    // Neuroticism
+    if (N >= 8) {
+        narrative += "You may experience heightened emotional sensitivity under stress, which can influence mood variability. ";
+    } else if (N <= 4) {
+        narrative += "Your responses suggest emotional stability and calmness under pressure. ";
+    } else {
+        narrative += "You likely experience typical emotional fluctuations within normal adaptive range. ";
+    }
+
+    // Openness
+    if (O >= 8) {
+        narrative += "You demonstrate curiosity and openness toward new ideas and experiences. ";
+    } else if (O <= 4) {
+        narrative += "You may prefer familiarity and practical approaches over abstract exploration. ";
+    } else {
+        narrative += "You likely balance creativity with practicality. ";
+    }
+
+    narrative += "These patterns describe tendencies rather than fixed traits and may shift across contexts.";
 
     return narrative;
 }

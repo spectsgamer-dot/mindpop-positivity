@@ -230,12 +230,12 @@ function renderDemographics() {
       <option>Agriculture Sciences & Technology</option>
     </select>
 
-    <select id="pursuing" onchange="handlePursuingChange()">
-    <option value="">Select</option>
-    <option value="UG">Undergraduate Student</option>
-    <option value="PG">Postgraduate Student</option>
-    <option value="Faculty">Faculty</option>
-    <option value="Other">Other</option>
+   <label>Pursuing</label>
+<select id="pursuing" onchange="handlePursuingChange()">
+  <option value="">Select</option>
+  <option value="Undergraduate">Undergraduate</option>
+  <option value="Postgraduate">Postgraduate</option>
+  <option value="Faculty">Faculty</option>
 </select>
 
 
@@ -604,12 +604,71 @@ function renderPersonalityResult(traits) {
   let resultHTML = `<h2>Personality Profile</h2>`;
 
   for (let trait in traits) {
-    const level = interpretTrait(traits[trait]);
-    resultHTML += `
-      <p><strong>${trait}</strong>: ${traits[trait]} (${level})</p>
-    `;
-  }
 
+    const score = traits[trait];
+    const level = interpretTrait(score);
+
+    let interpretation = "";
+
+    if (trait === "Neuroticism") {
+        if (level === "High") {
+            interpretation = "You may experience emotions more intensely and feel stress more strongly at times. With structured coping strategies and emotional regulation skills, this sensitivity can become a strength rather than a burden.";
+        } else if (level === "Low") {
+            interpretation = "You likely demonstrate emotional stability and resilience, recovering steadily from daily stressors.";
+        } else {
+            interpretation = "Your emotional responses appear balanced, reflecting typical stress sensitivity.";
+        }
+    }
+
+    if (trait === "Extraversion") {
+        if (level === "High") {
+            interpretation = "You tend to gain energy from social engagement and may thrive in interactive or leadership environments.";
+        } else if (level === "Low") {
+            interpretation = "You may prefer reflection, depth, and quieter environments that allow focused thinking.";
+        } else {
+            interpretation = "You show flexibility between social involvement and personal space.";
+        }
+    }
+
+    if (trait === "Conscientiousness") {
+        if (level === "Low") {
+            interpretation = "You may benefit from structured planning systems to enhance consistency in goal pursuit.";
+        } else if (level === "High") {
+            interpretation = "You likely demonstrate discipline, organization, and reliability in responsibilities.";
+        } else {
+            interpretation = "You balance structure with adaptability.";
+        }
+    }
+
+    if (trait === "Agreeableness") {
+        if (level === "High") {
+            interpretation = "You tend to prioritize cooperation and relational harmony in group settings.";
+        } else if (level === "Low") {
+            interpretation = "You may value assertiveness and independent judgement in interactions.";
+        } else {
+            interpretation = "You balance empathy with personal boundaries.";
+        }
+    }
+
+    if (trait === "Openness") {
+        if (level === "High") {
+            interpretation = "You are likely curious, imaginative, and open to new ideas and experiences.";
+        } else if (level === "Low") {
+            interpretation = "You may prefer familiar structures and practical approaches over abstract exploration.";
+        } else {
+            interpretation = "You combine creativity with grounded decision-making.";
+        }
+    }
+
+    resultHTML += `
+        <div style="margin-bottom:15px;">
+            <p><strong>${trait}</strong>: ${score} (${level})</p>
+            <p style="color:#444; font-size:14px; line-height:1.4;">
+                ${interpretation}
+            </p>
+        </div>
+    `;
+}
   
 resultHTML += `
   <br><br>
@@ -849,17 +908,18 @@ function restartAssessment() {
   renderConsent();
 }
 function handlePursuingChange() {
-    const pursuing = document.getElementById("pursuing").value;
-    const facultyExp = document.getElementById("facultyExperienceContainer");
-    const yearContainer = document.getElementById("yearContainer");
+  const pursuing = document.getElementById("pursuing").value;
 
-    if (pursuing === "Faculty") {
-        facultyExp.style.display = "block";
-        yearContainer.style.display = "none";
-    } else {
-        facultyExp.style.display = "none";
-        yearContainer.style.display = "block";
-    }
+  const yearContainer = document.getElementById("yearContainer");
+  const facultyContainer = document.getElementById("facultyExperienceContainer");
+
+  if (pursuing === "Faculty") {
+    yearContainer.style.display = "none";
+    facultyContainer.style.display = "block";
+  } else {
+    yearContainer.style.display = "block";
+    facultyContainer.style.display = "none";
+  }
 }
 
 // ---------------- START ----------------

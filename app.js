@@ -230,13 +230,14 @@ function renderDemographics() {
       <option>Agriculture Sciences & Technology</option>
     </select>
 
-    <label>Pursuing</label>
-<select id="pursuing" onchange="handlePursuingChange()">
-  <option value="">Select</option>
-  <option value="Undergraduate">Student</option>
-  <option value="Posgraduate">Faculty</option>
-  <option value="faculty">Other</option>
+    <select id="pursuing" onchange="handlePursuingChange()">
+    <option value="">Select</option>
+    <option value="UG">Undergraduate Student</option>
+    <option value="PG">Postgraduate Student</option>
+    <option value="Faculty">Faculty</option>
+    <option value="Other">Other</option>
 </select>
+
 
 <div id="facultyExperienceContainer" style="display:none;">
   <label>Experience as Faculty</label>
@@ -848,25 +849,17 @@ function restartAssessment() {
   renderConsent();
 }
 function handlePursuingChange() {
+    const pursuing = document.getElementById("pursuing").value;
+    const facultyExp = document.getElementById("facultyExperienceContainer");
+    const yearContainer = document.getElementById("yearContainer");
 
-  const pursuing = document.getElementById("pursuing").value;
-
-  const facultyContainer = document.getElementById("facultyExperienceContainer");
-  const yearContainer = document.getElementById("yearContainer");
-
-  const yearSelect = document.getElementById("year");
-
-  if (pursuing === "Faculty") {
-
-    facultyContainer.style.display = "block";
-    yearContainer.style.display = "none";
-    yearSelect.value = "";   // 🔥 reset year
-
-  } else {
-
-    facultyContainer.style.display = "none";
-    yearContainer.style.display = "block";
-  }
+    if (pursuing === "Faculty") {
+        facultyExp.style.display = "block";
+        yearContainer.style.display = "none";
+    } else {
+        facultyExp.style.display = "none";
+        yearContainer.style.display = "block";
+    }
 }
 
 // ---------------- START ----------------

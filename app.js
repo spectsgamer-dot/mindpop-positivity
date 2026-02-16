@@ -479,19 +479,24 @@ function submitTest(testName) {
         sessionState.results.Emotional_Intelligence = {
            total: totalEI
         };
-        render(`
-            <h2>Emotional Intelligence Result</h2>
-            <p>Your Total EI Score: <strong>${totalEI}</strong></p>
+       const insight = getShortInsight(
+    "Emotional_Intelligence",
+    sessionState.results.Emotional_Intelligence
+);
+   render(`
+<h2>Emotional Intelligence Result</h2>
+<p>Your Total EI Score: <strong>${totalEI}</strong></p>
 
-            <br><br>
-            <button onclick="renderDashboard()">Do Another Test</button>
-            <button onclick="renderFinalSummary()" 
-                style="margin-left:10px; background:#444;">
-                Finish Assessment
-            </button>
-        `);
+<p style="margin-top:10px; font-style:italic;">
+${insight}
+</p>
 
-        return;
+<br><br>
+<button onclick="renderDashboard()">Do Another Test</button>
+<button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
+Finish Assessment
+</button>
+`);
     }
 
   // ============================
@@ -508,17 +513,22 @@ function submitTest(testName) {
     sessionState.results.Happiness = {
        total: totalHappiness
   };
-    render(`
-        <h2>Happiness Result</h2>
-        <p>Your Total Happiness Score: <strong>${totalHappiness}</strong> / 28</p>
+    const insight = getShortInsight("Happiness", sessionState.results.Happiness);
 
-        <br><br>
-        <button onclick="renderDashboard()">Do Another Test</button>
-        <button onclick="renderFinalSummary()" 
-            style="margin-left:10px; background:#444;">
-            Finish Assessment
-        </button>
-    `);
+render(`
+<h2>Happiness Result</h2>
+<p>Your Total Happiness Score: <strong>${totalHappiness}</strong> / 28</p>
+
+<p style="margin-top:10px; font-style:italic;">
+${insight}
+</p>
+
+<br><br>
+<button onclick="renderDashboard()">Do Another Test</button>
+<button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
+Finish Assessment
+</button>
+`);
 
     return;
 }
@@ -536,17 +546,22 @@ function submitTest(testName) {
     sessionState.results.Stress = {
        total: totalStress
     };
-    render(`
-        <h2>Perceived Stress Result</h2>
-        <p>Your Total Stress Score: <strong>${totalStress}</strong></p>
+  const insight = getShortInsight("Stress", sessionState.results.Stress);
 
-        <br><br>
-        <button onclick="renderDashboard()">Do Another Test</button>
-        <button onclick="renderFinalSummary()" 
-            style="margin-left:10px; background:#444;">
-            Finish Assessment
-        </button>
-    `);
+render(`
+<h2>Perceived Stress Result</h2>
+<p>Your Total Stress Score: <strong>${totalStress}</strong></p>
+
+<p style="margin-top:10px; font-style:italic;">
+${insight}
+</p>
+
+<br><br>
+<button onclick="renderDashboard()">Do Another Test</button>
+<button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
+Finish Assessment
+</button>
+`);
 
     return;
 }
@@ -574,20 +589,28 @@ function submitTest(testName) {
     extrinsic,
     amotivation
     };
+    const insight = getShortInsight(
+    "Motivation",
+    sessionState.results.Motivation
+);
+
     render(`
-        <h2>Motivation Profile</h2>
+<h2>Motivation Profile</h2>
 
-        <p><strong>Intrinsic Motivation:</strong> ${intrinsic}</p>
-        <p><strong>Extrinsic Motivation:</strong> ${extrinsic}</p>
-        <p><strong>Amotivation:</strong> ${amotivation}</p>
+<p><strong>Intrinsic Motivation:</strong> ${intrinsic}</p>
+<p><strong>Extrinsic Motivation:</strong> ${extrinsic}</p>
+<p><strong>Amotivation:</strong> ${amotivation}</p>
 
-        <br><br>
-        <button onclick="renderDashboard()">Do Another Test</button>
-        <button onclick="renderFinalSummary()" 
-            style="margin-left:10px; background:#444;">
-            Finish Assessment
-        </button>
-    `);
+<p style="margin-top:10px; font-style:italic;">
+${insight}
+</p>
+
+<br><br>
+<button onclick="renderDashboard()">Do Another Test</button>
+<button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
+Finish Assessment
+</button>
+`);
 
     return;
 }
@@ -597,6 +620,39 @@ function interpretTrait(score) {
   if (score <= 4) return "Low";
   if (score <= 7) return "Moderate";
   return "High";
+}
+
+function getShortInsight(testName, data) {
+
+    if (testName === "Happiness") {
+        if (data.total <= 14) {
+            return "Your responses suggest lower daily positive emotional experience. Small environmental or social shifts may meaningfully improve wellbeing.";
+        }
+        return "Your responses suggest generally stable positive wellbeing patterns.";
+    }
+
+    if (testName === "Stress") {
+        if (data.total >= 12) {
+            return "Your responses indicate elevated perceived stress. Monitoring workload and recovery routines may be helpful.";
+        }
+        return "Your responses suggest manageable perceived stress levels.";
+    }
+
+    if (testName === "Emotional_Intelligence") {
+        if (data.total <= 25) {
+            return "Emotional awareness skills may benefit from intentional development. These capacities are learnable and improvable.";
+        }
+        return "Your responses suggest adaptive emotional processing skills.";
+    }
+
+    if (testName === "Motivation") {
+        if (data.amotivation > data.intrinsic && data.amotivation > data.extrinsic) {
+            return "Current motivational energy appears reduced. Reconnecting with personal meaning may be useful.";
+        }
+        return "Your motivation profile suggests engagement with goals.";
+    }
+
+    return "";
 }
 
 function renderPersonalityResult(traits) {
@@ -829,6 +885,13 @@ function renderFinalSummary() {
   `;
   }
 
+  const fullNarrative = generateFullNarrative();
+
+html += `
+<h3>Psychological Profile Overview</h3>
+<p>${fullNarrative}</p>
+`;
+
   if (supportBlocks !== "") {
   html += `
   <h3>Support & Reflection</h3>
@@ -920,6 +983,37 @@ function handlePursuingChange() {
     yearContainer.style.display = "block";
     facultyContainer.style.display = "none";
   }
+}
+function generateFullNarrative() {
+
+    let narrative = "";
+
+    const h = sessionState.results.Happiness;
+    const s = sessionState.results.Stress;
+    const ei = sessionState.results.Emotional_Intelligence;
+    const m = sessionState.results.Motivation;
+
+    if (h && h.total <= 14) {
+        narrative += "There are indicators of reduced positive affect. Environmental satisfaction and daily reinforcement patterns may benefit from reflection. ";
+    }
+
+    if (s && s.total >= 12) {
+        narrative += "Perceived stress appears elevated, which may influence concentration and emotional regulation if sustained. ";
+    }
+
+    if (ei && ei.total <= 25) {
+        narrative += "Emotional processing capacity may be underdeveloped currently, though these skills are highly trainable. ";
+    }
+
+    if (m && m.amotivation > m.intrinsic && m.amotivation > m.extrinsic) {
+        narrative += "Motivational structure suggests reduced goal-directed activation. Exploring autonomy and personal meaning may be valuable. ";
+    }
+
+    if (narrative === "") {
+        narrative = "Your responses suggest generally adaptive psychological functioning across assessed domains.";
+    }
+
+    return narrative;
 }
 
 // ---------------- START ----------------

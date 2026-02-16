@@ -273,10 +273,15 @@ function saveDemographics() {
   const pursuing = document.getElementById("pursuing").value;
   const year = document.getElementById("year").value;
 
-  if (!gender || !department || !pursuing || !year) {
+  if (!gender || !department || !pursuing) {
     alert("Please complete all required fields.");
     return;
-  }
+}
+
+if (pursuing !== "Faculty" && !year) {
+    alert("Please select Year.");
+    return;
+}
 
   sessionState.demographics = {
   name: document.getElementById("name").value,
@@ -849,10 +854,13 @@ function handlePursuingChange() {
   const facultyContainer = document.getElementById("facultyExperienceContainer");
   const yearContainer = document.getElementById("yearContainer");
 
+  const yearSelect = document.getElementById("year");
+
   if (pursuing === "Faculty") {
 
     facultyContainer.style.display = "block";
     yearContainer.style.display = "none";
+    yearSelect.value = "";   // 🔥 reset year
 
   } else {
 
@@ -860,6 +868,7 @@ function handlePursuingChange() {
     yearContainer.style.display = "block";
   }
 }
+
 // ---------------- START ----------------
 
 renderConsent();

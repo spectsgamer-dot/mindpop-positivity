@@ -370,15 +370,10 @@ function startTest(testName) {
 
     for (let i = 1; i <= scale.likert; i++) {
       options += `
-        <div class="option-row">
-          <input type="radio" id="q${index}_${i}" 
-                 name="q${index}" 
-                 value="${i}" 
-                 onclick="updateProgress(${scale.items})">
-          <label for="q${index}_${i}">
-            ${scale.labels[i - 1]}
-          </label>
-        </div>
+       <div class="option-row">
+    <input type="radio" id="q0_1" name="q0" value="1">
+    <label for="q0_1">Never</label>
+</div>
       `;
     }
 

@@ -483,12 +483,32 @@ function submitTest(testName) {
     "Emotional_Intelligence",
     sessionState.results.Emotional_Intelligence
 );
-   render(`
-<h2>Emotional Intelligence Result</h2>
-<p>Your Total EI Score: <strong>${totalEI}</strong></p>
+   let level = "";
+let interpretation = "";
 
-<p style="margin-top:10px; font-style:italic;">
-${insight}
+// 10 items, Likert 1–5 → range = 10–50
+
+if (totalEI <= 25) {
+    level = "Lower Range";
+    interpretation = "You may currently find it challenging to identify, regulate, or express emotions consistently. Emotional intelligence is a developable capacity, and reflective practices or skill-based training can significantly enhance it over time.";
+}
+else if (totalEI <= 38) {
+    level = "Moderate Range";
+    interpretation = "You demonstrate a functional ability to understand and manage emotions in everyday situations. There may be room to strengthen emotional awareness and interpersonal sensitivity in complex contexts.";
+}
+else {
+    level = "Higher Range";
+    interpretation = "You likely demonstrate strong emotional awareness and effective regulation strategies. This may support leadership, collaboration, and adaptive coping under stress.";
+}
+
+render(`
+<h2>Emotional Intelligence Profile</h2>
+
+<p><strong>Total Score:</strong> ${totalEI} / 50</p>
+<p><strong>Level:</strong> ${level}</p>
+
+<p style="margin-top:10px;">
+${interpretation}
 </p>
 
 <br><br>

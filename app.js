@@ -801,7 +801,11 @@ resultHTML += `
 
 function renderFinalSummary() {
 
-    const r = sessionState.results;
+const r = sessionState.results;
+
+const fullNarrative = generateFullNarrative();
+const report = generateStrengthWeaknessReport();
+const academicBlock = generateAcademicFunctioning();
 
     let html = `
 <h2>Assessment Summary 📊</h2>

@@ -226,16 +226,15 @@ render(`
     <label>Department</label>
     <select id="department">
       <option value="">Select</option>
-      <option>Humanities & Social Sciences</option>
-      <option>Sciences</option>
-      <option>Paramedical Sciences</option>
-      <option>Pharmaceutical Science</option>
-      <option>Engineering</option>
-      <option>Computer Technology</option>
-      <option>Nursing</option>
-      <option>Physiotherapy & Rehabilitation</option>
-      <option>Commerce & Management</option>
-      <option>Agriculture Sciences & Technology</option>
+      <option value="Humanities & Social Sciences">Humanities & Social Sciences</option>
+      <option value="Sciences">Sciences</option>
+      <option value="Paramedical Sciences">Paramedical Sciences</option>
+      <option value="Engineering">Engineering</option>
+      <option value="Computer Technology">Computer Technology</option>
+      <option value="Nursing">Nursing</option>
+      <option value="Physiotherapy & Rehabilitation">Physiotherapy & Rehabilitation</option>
+      <option value="Commerce & Management">Commerce & Management</option>
+      <option value="Agriculture Sciences & Technology">Agriculture Sciences & Technology</option>
     </select>
   </div>
 

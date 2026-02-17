@@ -201,12 +201,18 @@ function refuseConsent() {
 // ---------------- DEMOGRAPHICS ----------------
 
 function renderDemographics() {
-  render(`
-    <h2>Basic Details</h2>
+render(`
 
+<h2>Basic Details</h2>
+
+<div class="form-grid">
+
+  <div class="form-group">
     <label>Name (Optional)</label>
-    <input id="name">
+    <input type="text" id="name">
+  </div>
 
+  <div class="form-group">
     <label>Gender</label>
     <select id="gender">
       <option value="">Select</option>
@@ -214,7 +220,9 @@ function renderDemographics() {
       <option>Female</option>
       <option>Other</option>
     </select>
+  </div>
 
+  <div class="form-group">
     <label>Department</label>
     <select id="department">
       <option value="">Select</option>
@@ -229,42 +237,48 @@ function renderDemographics() {
       <option>Commerce & Management</option>
       <option>Agriculture Sciences & Technology</option>
     </select>
+  </div>
 
-   <label>Pursuing</label>
-<select id="pursuing" onchange="handlePursuingChange()">
-  <option value="">Select</option>
-  <option value="Undergraduate">Undergraduate</option>
-  <option value="Postgraduate">Postgraduate</option>
-  <option value="Faculty">Faculty</option>
-</select>
+  <div class="form-group">
+    <label>Pursuing</label>
+    <select id="pursuing" onchange="handlePursuingChange()">
+      <option value="">Select</option>
+      <option value="Undergraduate">Undergraduate</option>
+      <option value="Postgraduate">Postgraduate</option>
+      <option value="Faculty">Faculty</option>
+    </select>
+  </div>
 
+  <div class="form-group" id="yearContainer">
+    <label>Year</label>
+    <select id="year">
+      <option value="">Select</option>
+      <option>1st Year</option>
+      <option>2nd Year</option>
+      <option>3rd Year</option>
+      <option>4th Year</option>
+      <option>5th Year</option>
+    </select>
+  </div>
 
-<div id="facultyExperienceContainer" style="display:none;">
-  <label>Experience as Faculty</label>
-  <select id="facultyExperience">
-    <option value="">Select</option>
-    <option>0–2 Years</option>
-    <option>3–5 Years</option>
-    <option>6–10 Years</option>
-    <option>10+ Years</option>
-  </select>
+  <div class="form-group" id="facultyExperienceContainer" style="display:none;">
+    <label>Experience as Faculty</label>
+    <select id="facultyExperience">
+      <option value="">Select</option>
+      <option>0–2 Years</option>
+      <option>3–5 Years</option>
+      <option>6–10 Years</option>
+      <option>10+ Years</option>
+    </select>
+  </div>
+
 </div>
 
-    <div id="yearContainer">
-  <label>Year</label>
-  <select id="year">
-    <option value="">Select</option>
-    <option>1st Year</option>
-    <option>2nd Year</option>
-    <option>3rd Year</option>
-    <option>4th Year</option>
-    <option>5th Year</option>
-  </select>
+<div class="form-actions">
+  <button onclick="saveDemographics()">Continue</button>
 </div>
 
-
-    <button onclick="saveDemographics()">Continue</button>
-  `);
+`);
 }
 
 function saveDemographics() {

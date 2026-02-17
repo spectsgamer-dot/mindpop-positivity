@@ -201,105 +201,100 @@ function refuseConsent() {
 // ---------------- DEMOGRAPHICS ----------------
 
 function renderDemographics() {
-render(`
-<h2>Basic Details</h2>
+  render(`
+    <h2>Basic Details</h2>
 
-<div class="form-grid">
+    <label>Name (Optional)</label>
+    <input id="name">
 
-<div class="form-group">
-<label>Name (Optional)</label>
-<input type="text" id="name">
-</div>
+    <label>Gender</label>
+    <select id="gender">
+      <option value="">Select</option>
+      <option>Male</option>
+      <option>Female</option>
+      <option>Other</option>
+    </select>
 
-<div class="form-group">
-<label>Gender</label>
-<select id="gender">
-<option value="">Select</option>
-<option>Male</option>
-<option>Female</option>
-<option>Other</option>
-</select>
-</div>
+    <label>Department</label>
+    <select id="department">
+      <option value="">Select</option>
+      <option>Humanities & Social Sciences</option>
+      <option>Sciences</option>
+      <option>Paramedical Sciences</option>
+      <option>Pharmaceutical Science</option>
+      <option>Engineering</option>
+      <option>Computer Technology</option>
+      <option>Nursing</option>
+      <option>Physiotherapy & Rehabilitation</option>
+      <option>Commerce & Management</option>
+      <option>Agriculture Sciences & Technology</option>
+    </select>
 
-<div class="form-group">
-<label>Department</label>
-<select id="department">
-<option value="">Select</option>
-<option>Psychology</option>
-<option>Commerce</option>
-<option>Science</option>
-</select>
-</div>
-
-<div class="form-group">
-<label>Pursuing</label>
+   <label>Pursuing</label>
 <select id="pursuing" onchange="handlePursuingChange()">
-<option value="">Select</option>
-<option>Undergraduate</option>
-<option>Postgraduate</option>
-<option>Faculty</option>
+  <option value="">Select</option>
+  <option value="Undergraduate">Undergraduate</option>
+  <option value="Postgraduate">Postgraduate</option>
+  <option value="Faculty">Faculty</option>
 </select>
+
+
+<div id="facultyExperienceContainer" style="display:none;">
+  <label>Experience as Faculty</label>
+  <select id="facultyExperience">
+    <option value="">Select</option>
+    <option>0–2 Years</option>
+    <option>3–5 Years</option>
+    <option>6–10 Years</option>
+    <option>10+ Years</option>
+  </select>
 </div>
 
-<div class="form-group" id="yearContainer">
-<label>Year</label>
-<select id="year">
-<option value="">Select</option>
-<option>1st Year</option>
-<option>2nd Year</option>
-<option>3rd Year</option>
-<option>4th Year</option>
-</select>
+    <div id="yearContainer">
+  <label>Year</label>
+  <select id="year">
+    <option value="">Select</option>
+    <option>1st Year</option>
+    <option>2nd Year</option>
+    <option>3rd Year</option>
+    <option>4th Year</option>
+    <option>5th Year</option>
+  </select>
 </div>
 
-<div class="form-group" id="facultyContainer" style="display:none;">
-<label>Years of Experience</label>
-<input type="text" id="facultyExperience" placeholder="e.g., 5 years">
-</div>
 
-<div class="form-full">
-<button onclick="saveDemographics()">Continue</button>
-</div>
-
-</div>
-`);
+    <button onclick="saveDemographics()">Continue</button>
+  `);
 }
 
-// Fix: Update saveDemographics to properly validate and save data
 function saveDemographics() {
 
   const gender = document.getElementById("gender").value;
   const department = document.getElementById("department").value;
   const pursuing = document.getElementById("pursuing").value;
   const year = document.getElementById("year").value;
-  const facultyExperience = document.getElementById("facultyExperience").value;
 
   if (!gender || !department || !pursuing) {
     alert("Please complete all required fields.");
     return;
-  }
+}
 
-  if (pursuing !== "Faculty" && !year) {
+if (pursuing !== "Faculty" && !year) {
     alert("Please select Year.");
     return;
-  }
-
-  if (pursuing === "Faculty" && !facultyExperience) {
-    alert("Please enter years of experience.");
-    return;
-  }
+}
 
   sessionState.demographics = {
-    name: document.getElementById("name").value,
-    gender: gender,
-    pursuing: pursuing,
-    department: department,
-    facultyExperience: pursuing === "Faculty" ? facultyExperience : "",
-    year: pursuing !== "Faculty" ? year : ""
-  };
+  name: document.getElementById("name").value,
+  gender: document.getElementById("gender").value,
+  pursuing: document.getElementById("pursuing").value,
+  facultyExperience: document.getElementById("facultyExperience")?.value || "",
+  year: document.getElementById("year").value
+};
 
   renderDashboard();
 }
+
 // ---------------- DASHBOARD ----------------
 
 function renderDashboard() {
@@ -938,38 +933,26 @@ function renderFinalSummary() {
   `;
   }
 
-const fullNarrative = generateFullNarrative();
+  const fullNarrative = generateFullNarrative();
+
+html += `
+<h3>Psychological Profile Overview</h3>
+Strength Indicators
+Growth & Development Areas
+<p>${fullNarrative}</p>
+`;
 const report = generateStrengthWeaknessReport();
 
 html += `
-<div class="summary-section">
-
-<div class="summary-card">
-<div class="summary-title">Psychological Profile Overview</div>
-<div class="summary-text">
-${fullNarrative}
-</div>
-</div>
-
-<div class="summary-card">
-<div class="summary-title">Strength Indicators</div>
-<div class="summary-text">
+<h3>Strength Indicators</h3>
 <ul>
-${report.strengths.map(s => `<li>${s}</li>`).join("")}
+${report.strengths.length ? report.strengths.map(s => `<li>${s}</li>`).join("") : "<li>No prominent strengths identified in assessed domains.</li>"}
 </ul>
-</div>
-</div>
 
-<div class="summary-card">
-<div class="summary-title">Growth & Development Areas</div>
-<div class="summary-text">
+<h3>Growth & Development Areas</h3>
 <ul>
-${report.growth.map(w => `<li>${w}</li>`).join("")}
+${report.growth.length ? report.growth.map(g => `<li>${g}</li>`).join("") : "<li>No major developmental flags detected.</li>"}
 </ul>
-</div>
-</div>
-
-</div>
 `;
   
   if (supportBlocks !== "") {

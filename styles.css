@@ -143,9 +143,10 @@ button:hover {
     background: #ffffff;
     padding: 18px;
     border-radius: 10px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
     margin-bottom: 15px;
+    border: 1px solid #eee;   /* Soft border instead of shadow */
 }
+
 
 .summary-title {
     font-size: 18px;
@@ -167,6 +168,34 @@ button:hover {
 
 .summary-card li {
   margin-bottom: 6px;
+}
+/* ============================= */
+/* MOBILE RESPONSIVE FIX */
+/* ============================= */
+
+@media (max-width: 768px) {
+
+  body {
+    padding: 20px 10px;
+  }
+
+  .card {
+    padding: 20px;
+    margin: 0 auto;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;   /* Switch to single column */
+  }
+
+  .form-full {
+    grid-column: span 1;
+  }
+
+  button {
+    width: 100%;
+  }
+
 }
 
 .summary-actions {

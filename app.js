@@ -812,9 +812,16 @@ const academicBlock = generateAcademicFunctioning();
 
 <div class="summary-card">
   <h3>Profile Snapshot</h3>
-  ${r.Personality ? `
-    <p><strong>Personality:</strong> Trait-based profile available</p>
-  ` : ""}
+ ${r.Personality ? `
+  <div>
+    <strong>Personality:</strong><br>
+    Extraversion: ${r.Personality.extraversion}<br>
+    Agreeableness: ${r.Personality.agreeableness}<br>
+    Conscientiousness: ${r.Personality.conscientiousness}<br>
+    Neuroticism: ${r.Personality.neuroticism}<br>
+    Openness: ${r.Personality.openness}
+  </div>
+` : ""}
 
   ${r.Emotional_Intelligence ? `
     <p><strong>Emotional Intelligence:</strong> ${r.Emotional_Intelligence.total}</p>

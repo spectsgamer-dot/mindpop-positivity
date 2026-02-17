@@ -156,5 +156,21 @@ button:hover {
 .summary-text {
     line-height: 1.6;
 }
+.summary-card h3 {
+  margin-top: 0;
+}
+
+.summary-card ul {
+  padding-left: 20px;
+  margin-top: 10px;
+}
+
+.summary-card li {
+  margin-bottom: 6px;
+}
+
+.summary-actions {
+  margin-top: 25px;
+}
 
 

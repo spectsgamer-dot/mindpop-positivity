@@ -300,10 +300,12 @@ if (pursuing !== "Faculty" && !year) {
   sessionState.demographics = {
   name: document.getElementById("name").value,
   gender: document.getElementById("gender").value,
+  department: document.getElementById("department").value, // ✅ ADD THIS
   pursuing: document.getElementById("pursuing").value,
   facultyExperience: document.getElementById("facultyExperience")?.value || "",
   year: document.getElementById("year").value
 };
+
 
   renderDashboard();
 }

@@ -1,15 +1,4 @@
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxA5Bpoz5nQ0FwtL9v7WPKSBn3su_xqtXbLzJe74Lx8KtXWMRdreZXwyp3zNVeCUQTw/exec";
-const CLINICAL_VERSION = "v1.0-freeze";
-
-/* ===== CLINICAL LAYER FROZEN - DO NOT MODIFY BELOW WITHOUT VERSION UPDATE ===== */
-const THRESHOLDS = {
-    STRESS_HIGH: 12,
-    STRESS_MODERATE: 8,
-    HAPPINESS_LOW: 12,
-    EI_LOW: 25
-};
-
-
 
 // ---------------- SESSION ----------------
 
@@ -812,16 +801,14 @@ resultHTML += `
 
 function renderFinalSummary() {
 
-    const r = sessionState.results;
+const r = sessionState.results;
 
-    const fullNarrative = generateFullNarrative();
-    const report = generateStrengthWeaknessReport();
-    const academicBlock = generateAcademicFunctioning();
-    const riskTierBlock = generateRiskTier();
+const fullNarrative = generateFullNarrative();
+const report = generateStrengthWeaknessReport();
+const academicBlock = generateAcademicFunctioning();
 
-    let html = `<h2>Assessment Summary 📊</h2>`;
-
-    html += riskTierBlock;
+    let html = `
+<h2>Assessment Summary 📊</h2>
 
 <div class="summary-card">
   <h3>Profile Snapshot</h3>
@@ -894,18 +881,18 @@ html += `
 </div>
 `;
 
-// /* =============================
-//    Support Blocks
-// ============================= */
+/* =============================
+   Support Blocks
+============================= */
 
-// if (supportBlocks !== "") {
-//   html += `
-//   <div class="summary-card">
-//     <h3>Support & Reflection</h3>
-//     ${supportBlocks}
-//   </div>
-//   `;
-// }
+if (supportBlocks !== "") {
+  html += `
+  <div class="summary-card">
+    <h3>Support & Reflection</h3>
+    ${supportBlocks}
+  </div>
+  `;
+}
 
 /* =============================
    Action Buttons
@@ -1158,43 +1145,6 @@ function generateAcademicFunctioning() {
                 <p><strong>Resilience Pattern:</strong> ${resilienceProfile}</p>
                 <p><strong>Performance Recommendation:</strong> ${recommendation}</p>
             </div>
-        </div>
-    `;
-}
-function generateRiskTier() {
-
-    const p = sessionState.results.Personality;
-    const s = sessionState.results.Stress;
-    const h = sessionState.results.Happiness;
-    const ei = sessionState.results.Emotional_Intelligence;
-    const m = sessionState.results.Motivation;
-
-    let tier = "Balanced Functioning";
-    let color = "#2e7d32"; // green
-
-    // Elevated Strain
-    if (
-        (s && s.total >= 12) ||
-        (h && h.total <= 12 && m && m.amotivation > m.intrinsic)
-    ) {
-        tier = "Elevated Strain";
-        color = "#c62828"; // red
-    }
-
-    // Growth Focused
-    else if (
-        (s && s.total >= 8) ||
-        (ei && ei.total <= 25) ||
-        (m && m.amotivation > m.intrinsic)
-    ) {
-        tier = "Growth-Focused Profile";
-        color = "#f9a825"; // amber
-    }
-
-    return `
-        <div class="summary-card" style="border-left: 6px solid ${color};">
-            <h3>Overall Profile Status</h3>
-            <p style="font-weight:700; color:${color};">${tier}</p>
         </div>
     `;
 }

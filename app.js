@@ -948,13 +948,18 @@ function renderFinalSummary() {
   }
 
   const fullNarrative = generateFullNarrative();
+  const academicBlock = generateAcademicFunctioning();
 
 html += `
+
 <h3>Psychological Profile Overview</h3>
-Strength Indicators
-Growth & Development Areas
+
 <p>${fullNarrative}</p>
+
+${academicBlock}
+
 `;
+
 const report = generateStrengthWeaknessReport();
 
 html += `
@@ -1134,6 +1139,90 @@ function generateFullNarrative() {
 
     return narrative;
 }
+function generateAcademicFunctioning() {
+
+    const p = sessionState.results.Personality;
+    const h = sessionState.results.Happiness;
+    const s = sessionState.results.Stress;
+    const ei = sessionState.results.Emotional_Intelligence;
+    const m = sessionState.results.Motivation;
+
+    let overview = "";
+    let focusCapacity = "";
+    let effortSustainability = "";
+    let resilienceProfile = "";
+    let recommendation = "";
+
+    // -----------------------------
+    // Focus Capacity
+    // -----------------------------
+    if (s && s.total >= 10) {
+        focusCapacity = "Elevated stress may intermittently affect concentration and mental clarity during demanding periods.";
+    } else {
+        focusCapacity = "Concentration capacity appears generally stable under routine academic demands.";
+    }
+
+    // -----------------------------
+    // Effort Sustainability
+    // -----------------------------
+    if (m) {
+        if (m.amotivation > m.intrinsic && m.amotivation > m.extrinsic) {
+            effortSustainability = "Sustaining academic effort may feel inconsistent at present, particularly when tasks feel disconnected from personal meaning.";
+        }
+        else if (m.intrinsic > m.extrinsic) {
+            effortSustainability = "Internally driven engagement may support deeper and more sustainable learning patterns.";
+        }
+        else {
+            effortSustainability = "Clear structure and accountability systems may enhance effort consistency.";
+        }
+    }
+
+    // -----------------------------
+    // Resilience Profile
+    // -----------------------------
+    if (ei && s) {
+        if (ei.total >= 38 && s.total >= 10) {
+            resilienceProfile = "Despite elevated demands, emotional regulation capacity may buffer against prolonged academic disruption.";
+        }
+        else if (ei.total <= 25 && s.total >= 10) {
+            resilienceProfile = "Academic strain may feel more internally taxing when stress and emotional regulation load combine.";
+        }
+        else {
+            resilienceProfile = "Stress-response and emotional regulation patterns appear within adaptive range.";
+        }
+    }
+
+    // -----------------------------
+    // Overextension Risk
+    // -----------------------------
+    if (p && s) {
+        if (p.Conscientiousness >= 8 && s.total >= 10) {
+            recommendation = "High achievement orientation combined with elevated stress suggests monitoring pacing and workload balance.";
+        }
+    }
+
+    if (!recommendation) {
+        recommendation = "Maintaining structured routines, recovery breaks, and goal clarity may support sustained academic functioning.";
+    }
+
+    // -----------------------------
+    // Final Overview
+    // -----------------------------
+    overview = "Your academic functioning profile reflects the interaction between motivation, emotional regulation, stress load, and task orientation.";
+
+    return `
+        <div class="summary-card">
+            <div class="summary-title">Academic Functioning Overview</div>
+            <div class="summary-text">
+                <p>${overview}</p>
+                <p><strong>Focus Capacity:</strong> ${focusCapacity}</p>
+                <p><strong>Effort Sustainability:</strong> ${effortSustainability}</p>
+                <p><strong>Resilience Pattern:</strong> ${resilienceProfile}</p>
+                <p><strong>Performance Recommendation:</strong> ${recommendation}</p>
+            </div>
+        </div>
+    `;
+}
 
 function generateStrengthWeaknessReport() {
 
@@ -1146,85 +1235,139 @@ function generateStrengthWeaknessReport() {
     const s = sessionState.results.Stress;
     const m = sessionState.results.Motivation;
 
-    // ---------------- Personality ----------------
+    // ==============================
+    // Personality Strength Patterns
+    // ==============================
 
     if (p) {
 
         if (p.Conscientiousness >= 8) {
-            strengths.push("Strong task discipline and goal orientation. This often supports academic reliability, structured planning, and consistent follow-through.");
+            strengths.push("Strong task discipline and structured goal orientation. This may support consistent academic performance and planning efficiency.");
         }
 
         if (p.Agreeableness >= 8) {
-            strengths.push("Cooperative and empathetic interpersonal style. This can enhance teamwork, peer relationships, and conflict resolution.");
+            strengths.push("Cooperative interpersonal style that may enhance teamwork and peer collaboration.");
         }
 
         if (p.Openness >= 8) {
-            strengths.push("Curiosity and openness to ideas. This supports creativity, adaptive thinking, and intellectual exploration.");
+            strengths.push("Intellectual curiosity and openness to new ideas, supporting adaptive learning.");
         }
 
         if (p.Neuroticism >= 8) {
-            growth.push("Heightened emotional sensitivity under stress. Developing emotional regulation strategies may improve resilience during demanding periods.");
+            growth.push("Heightened emotional sensitivity under stress. Developing structured coping routines may enhance resilience during demanding periods.");
         }
 
         if (p.Conscientiousness <= 4) {
-            growth.push("Lower task structure orientation. Building planning systems and time-management routines may enhance performance stability.");
+            growth.push("Lower task structure orientation. Building consistent planning systems may strengthen follow-through.");
         }
     }
 
-    // ---------------- Emotional Intelligence ----------------
+    // ==============================
+    // EI Strength / Growth
+    // ==============================
 
     if (ei) {
 
         if (ei.total >= 40) {
-            strengths.push("Strong emotional awareness and regulation. This may support leadership potential, interpersonal trust, and adaptive coping.");
+            strengths.push("Strong emotional awareness and regulation capacity, which may buffer against academic and interpersonal stress.");
         }
 
         if (ei.total <= 25) {
-            growth.push("Emotional processing skills may benefit from intentional development. Structured reflection and feedback can strengthen this capacity.");
+            growth.push("Emotional regulation skills may benefit from intentional reflection practices and feedback-based learning.");
         }
     }
 
-    // ---------------- Happiness ----------------
-
-    if (h) {
-
-        if (h.total >= 22) {
-            strengths.push("Positive subjective wellbeing indicators. This often correlates with optimism, persistence, and social engagement.");
-        }
-
-        if (h.total <= 12) {
-            growth.push("Reduced subjective wellbeing at present. Increasing positive reinforcement, social support, or activity engagement may be beneficial.");
-        }
-    }
-
-    // ---------------- Stress ----------------
+    // ==============================
+    // Stress Pattern
+    // ==============================
 
     if (s) {
 
         if (s.total <= 4) {
-            strengths.push("Low perceived stress levels. Suggests effective coping strategies and psychological stability under routine demands.");
+            strengths.push("Low perceived stress levels suggest effective coping balance under routine demands.");
         }
 
         if (s.total >= 12) {
-            growth.push("Elevated perceived stress. Prolonged strain may affect concentration, sleep, and emotional balance if unaddressed.");
+            growth.push("Elevated stress activation may impact clarity and energy if sustained. Recovery planning may help stabilize functioning.");
         }
     }
 
-    // ---------------- Motivation ----------------
+    // ==============================
+    // Happiness Pattern
+    // ==============================
+
+    if (h) {
+
+        if (h.total >= 22) {
+            strengths.push("Positive emotional baseline that may enhance creativity, persistence, and social engagement.");
+        }
+
+        if (h.total <= 12) {
+            growth.push("Reduced subjective wellbeing at present. Increasing meaningful engagement and restorative activities may support uplift.");
+        }
+    }
+
+    // ==============================
+    // Motivation Pattern
+    // ==============================
 
     if (m) {
 
         if (m.intrinsic > m.extrinsic && m.intrinsic > m.amotivation) {
-            strengths.push("Strong intrinsic motivation. Engagement appears driven by internal curiosity and personal interest, which supports deeper learning.");
-        }
-
-        if (m.amotivation > m.intrinsic && m.amotivation > m.extrinsic) {
-            growth.push("Reduced motivational activation. Clarifying goals and reconnecting with personal meaning may restore engagement.");
+            strengths.push("Internally driven motivation, supporting sustained and self-directed learning.");
         }
 
         if (m.extrinsic > m.intrinsic && m.extrinsic > m.amotivation) {
-            strengths.push("Clear responsiveness to external structure. Deadlines and expectations may effectively support performance.");
+            strengths.push("Responsiveness to structure and accountability, which may enhance performance in organized environments.");
         }
+
+        if (m.amotivation > m.intrinsic && m.amotivation > m.extrinsic) {
+            growth.push("Reduced motivational activation. Clarifying personal goals and reconnecting with purpose may restore engagement.");
+        }
+    }
+
+    // ==============================
+    // Cross-Scale Interaction Logic
+    // ==============================
+
+    // High Stress + High Conscientiousness
+    if (s && p) {
+        if (s.total >= 10 && p.Conscientiousness >= 8) {
+            growth.push("Strong achievement drive combined with elevated stress may indicate overextension. Introducing pacing strategies could prevent fatigue.");
+        }
+    }
+
+    // High EI + High Stress
+    if (s && ei) {
+        if (s.total >= 10 && ei.total >= 38) {
+            strengths.push("Despite elevated stress, emotional regulation capacity may provide resilience and adaptive recovery potential.");
+        }
+    }
+
+    // Low Happiness + High Amotivation
+    if (h && m) {
+        if (h.total <= 12 && m.amotivation > m.intrinsic) {
+            growth.push("Lower positive affect combined with reduced motivational activation may reflect temporary disengagement. Structured support may restore direction.");
+        }
+    }
+
+    // Balanced Protective Pattern
+    if (ei && h && s) {
+        if (ei.total >= 38 && h.total >= 20 && s.total <= 9) {
+            strengths.push("Balanced emotional regulation, positive affect, and manageable stress suggest strong adaptive functioning.");
+        }
+    }
+
+    // ==============================
+    // Fallback Safety
+    // ==============================
+
+    if (strengths.length === 0) {
+        strengths.push("Your profile reflects balanced psychological functioning without pronounced vulnerabilities.");
+    }
+
+    if (growth.length === 0) {
+        growth.push("No significant development flags identified. Continued self-reflection may support ongoing growth.");
     }
 
     return { strengths, growth };

@@ -1065,33 +1065,76 @@ function generateFullNarrative() {
 
     let narrative = "";
 
+    const p = sessionState.results.Personality;
     const h = sessionState.results.Happiness;
     const s = sessionState.results.Stress;
     const ei = sessionState.results.Emotional_Intelligence;
     const m = sessionState.results.Motivation;
 
-    if (h && h.total <= 14) {
-        narrative += "There are indicators of reduced positive affect. Environmental satisfaction and daily reinforcement patterns may benefit from reflection. ";
+    // ===============================
+    // 1️⃣ Stress + EI Interaction
+    // ===============================
+    if (s && ei) {
+
+        if (s.total >= 10 && ei.total <= 25) {
+            narrative += "Elevated stress combined with developing emotional regulation skills may increase internal strain during demanding periods. Strengthening reflective coping strategies could meaningfully improve balance. ";
+        }
+
+        else if (s.total >= 10 && ei.total > 38) {
+            narrative += "Although stress levels appear elevated, your emotional regulation capacity may buffer against prolonged disruption. Structured recovery practices may further stabilize performance. ";
+        }
     }
 
-    if (s && s.total >= 12) {
-        narrative += "Perceived stress appears elevated, which may influence concentration and emotional regulation if sustained. ";
+    // ===============================
+    // 2️⃣ Stress + Conscientiousness
+    // ===============================
+    if (s && p) {
+
+        if (s.total >= 10 && p.Conscientiousness >= 8) {
+            narrative += "High task commitment alongside elevated stress may reflect overextension. Introducing pacing strategies and boundary-setting could prevent long-term fatigue. ";
+        }
     }
 
-    if (ei && ei.total <= 25) {
-        narrative += "Emotional processing capacity may be underdeveloped currently, though these skills are highly trainable. ";
+    // ===============================
+    // 3️⃣ Happiness + Motivation
+    // ===============================
+    if (h && m) {
+
+        if (h.total <= 12 && m.amotivation > m.intrinsic && m.amotivation > m.extrinsic) {
+            narrative += "Lower positive affect combined with reduced motivational activation may indicate temporary disengagement. Reconnecting with supportive environments and meaningful goals may restore momentum. ";
+        }
     }
 
-    if (m && m.amotivation > m.intrinsic && m.amotivation > m.extrinsic) {
-        narrative += "Motivational structure suggests reduced goal-directed activation. Exploring autonomy and personal meaning may be valuable. ";
+    // ===============================
+    // 4️⃣ EI + Motivation
+    // ===============================
+    if (ei && m) {
+
+        if (ei.total > 38 && m.intrinsic > m.extrinsic) {
+            narrative += "Strong emotional awareness paired with intrinsic motivation suggests adaptive self-directed engagement patterns. This combination often supports sustained academic growth. ";
+        }
     }
 
+    // ===============================
+    // 5️⃣ Openness + Intrinsic Motivation
+    // ===============================
+    if (p && m) {
+
+        if (p.Openness >= 8 && m.intrinsic > m.extrinsic) {
+            narrative += "Curiosity and internally driven motivation may enhance exploratory learning and intellectual flexibility. ";
+        }
+    }
+
+    // ===============================
+    // 6️⃣ Default Balanced Statement
+    // ===============================
     if (narrative === "") {
-        narrative = "Your responses suggest generally adaptive psychological functioning across assessed domains.";
+        narrative = "Your responses suggest generally adaptive psychological functioning across assessed domains, with balanced emotional and motivational patterns.";
     }
 
     return narrative;
 }
+
 function generateStrengthWeaknessReport() {
 
     let strengths = [];
@@ -1248,48 +1291,240 @@ function generatePersonalityNarrative(traits) {
 }
 function generateEINarrative(totalEI) {
 
-    if (totalEI <= 25)
-        return "You may currently find emotional identification and regulation challenging. These skills are highly developable through reflective practice and feedback.";
+    let interpretation = "";
+    let academicImpact = "";
+    let socialImpact = "";
+    let regulationImpact = "";
+    let growthFocus = "";
 
-    if (totalEI <= 38)
-        return "You demonstrate functional emotional awareness in everyday situations, with potential for further refinement in complex interpersonal contexts.";
+    if (totalEI <= 25) {
 
-    return "You likely possess strong emotional awareness and regulation skills, supporting adaptive coping and collaborative functioning.";
+        interpretation = "Your responses suggest that emotional awareness and regulation may currently require more conscious effort.";
+
+        academicImpact = "During academic pressure, emotional shifts may influence concentration, decision-making, or persistence.";
+
+        socialImpact = "Interpersonal misunderstandings may occur occasionally, especially in emotionally charged situations.";
+
+        regulationImpact = "Emotional responses may feel intense or harder to modulate in high-demand moments.";
+
+        growthFocus = "Emotional skills are highly developable. Practicing emotion labeling, reflective pauses, and feedback-based learning can strengthen regulation capacity over time.";
+
+    } else if (totalEI <= 38) {
+
+        interpretation = "You demonstrate functional emotional awareness across most everyday situations.";
+
+        academicImpact = "You likely manage routine stress adaptively, though highly complex or ambiguous situations may still feel demanding.";
+
+        socialImpact = "You appear generally responsive to others’ emotions, supporting stable peer interactions.";
+
+        regulationImpact = "Your emotional regulation system appears steady, with room for refinement in high-pressure environments.";
+
+        growthFocus = "Further strengthening perspective-taking and structured emotional reflection may enhance resilience and leadership capacity.";
+
+    } else {
+
+        interpretation = "Your responses suggest strong emotional awareness and regulation skills.";
+
+        academicImpact = "You are likely able to sustain focus and adapt under pressure without significant emotional disruption.";
+
+        socialImpact = "You may naturally navigate interpersonal situations with sensitivity and composure.";
+
+        regulationImpact = "Your emotional processing appears flexible and well-modulated.";
+
+        growthFocus = "Continuing reflective practices and mentorship roles may help you further integrate these strengths into leadership contexts.";
+    }
+
+    return `
+        <p>${interpretation}</p>
+        <p><strong>Academic Context:</strong> ${academicImpact}</p>
+        <p><strong>Interpersonal Context:</strong> ${socialImpact}</p>
+        <p><strong>Regulation Pattern:</strong> ${regulationImpact}</p>
+        <p><strong>Growth Focus:</strong> ${growthFocus}</p>
+    `;
 }
 function generateHappinessNarrative(totalHappiness) {
 
-    if (totalHappiness <= 12)
-        return "Your responses suggest reduced subjective wellbeing at this time. This may reflect temporary strain rather than a fixed state.";
+    let interpretation = "";
+    let academicImpact = "";
+    let socialImpact = "";
+    let resiliencePattern = "";
+    let growthFocus = "";
 
-    if (totalHappiness <= 20)
-        return "You demonstrate moderate life satisfaction, with balanced positive and stressful experiences.";
+    if (totalHappiness <= 12) {
 
-    return "Your responses indicate strong subjective wellbeing and life satisfaction.";
+        interpretation = "Your responses suggest reduced subjective wellbeing at this time.";
+
+        academicImpact = "Lower positive affect can influence energy levels, motivation, and cognitive flexibility during academic tasks.";
+
+        socialImpact = "You may feel less socially engaged or emotionally uplifted in daily interactions.";
+
+        resiliencePattern = "Positive emotional buffering may currently be limited.";
+
+        growthFocus = "Small, consistent positive activities and supportive peer interaction can gradually enhance daily wellbeing.";
+
+    } else if (totalHappiness <= 20) {
+
+        interpretation = "Your responses indicate moderate life satisfaction.";
+
+        academicImpact = "Emotional balance appears stable, though fluctuations may occur during high-demand periods.";
+
+        socialImpact = "You likely maintain generally stable social engagement.";
+
+        resiliencePattern = "Positive emotion appears present but may vary with situational stress.";
+
+        growthFocus = "Intentional positive reinforcement and meaningful engagement can strengthen overall satisfaction.";
+
+    } else {
+
+        interpretation = "Your responses reflect strong subjective wellbeing.";
+
+        academicImpact = "Positive emotional states often support creativity, persistence, and adaptive thinking.";
+
+        socialImpact = "You may naturally contribute positive emotional tone within peer environments.";
+
+        resiliencePattern = "Higher positive affect often buffers against stress-related disruption.";
+
+        growthFocus = "Sustaining balanced routines will help maintain this level of wellbeing.";
+    }
+
+    return `
+        <p>${interpretation}</p>
+        <p><strong>Academic Context:</strong> ${academicImpact}</p>
+        <p><strong>Interpersonal Context:</strong> ${socialImpact}</p>
+        <p><strong>Resilience Pattern:</strong> ${resiliencePattern}</p>
+        <p><strong>Growth Focus:</strong> ${growthFocus}</p>
+    `;
 }
+
 function generateStressNarrative(totalStress) {
 
-    if (totalStress <= 4)
-        return "You currently report low perceived stress and appear to manage demands effectively.";
+    let interpretation = "";
+    let academicImpact = "";
+    let socialImpact = "";
+    let regulationImpact = "";
+    let growthFocus = "";
 
-    if (totalStress <= 9)
-        return "Your perceived stress level appears within typical adaptive range.";
+    if (totalStress <= 4) {
 
-    return "Your responses suggest elevated perceived stress, which may impact concentration, mood, and recovery if sustained.";
+        interpretation = "You currently report low perceived stress levels. Daily demands appear manageable within your coping capacity.";
+
+        academicImpact = "This level of stress typically supports steady concentration and consistent academic performance.";
+
+        socialImpact = "Lower stress often allows greater patience and flexibility in interpersonal interactions.";
+
+        regulationImpact = "Your current stress regulation system appears balanced and adaptive.";
+
+        growthFocus = "Maintaining recovery habits (sleep, structured breaks, reflective pauses) will help sustain this stability.";
+
+    } else if (totalStress <= 9) {
+
+        interpretation = "Your responses suggest moderate perceived stress, which is common during academic cycles.";
+
+        academicImpact = "Short-term stress may enhance motivation, though prolonged pressure could begin to affect focus and memory efficiency.";
+
+        socialImpact = "You may notice reduced emotional bandwidth during busy periods.";
+
+        regulationImpact = "Stress levels appear within adaptive range, though recovery routines become increasingly important.";
+
+        growthFocus = "Building small recovery anchors (structured planning, scheduled breaks, brief emotional check-ins) may improve balance.";
+
+    } else {
+
+        interpretation = "Your responses indicate elevated perceived stress at this time.";
+
+        academicImpact = "Sustained stress may influence concentration, task initiation, and mental clarity if not addressed.";
+
+        socialImpact = "Higher stress levels can reduce emotional availability and increase irritability under pressure.";
+
+        regulationImpact = "Your stress-response system may currently be working at high activation.";
+
+        growthFocus = "Introducing structured recovery practices and seeking supportive conversations may help restore equilibrium.";
+    }
+
+    return `
+        <p>${interpretation}</p>
+        <p><strong>Academic Context:</strong> ${academicImpact}</p>
+        <p><strong>Interpersonal Context:</strong> ${socialImpact}</p>
+        <p><strong>Regulation Pattern:</strong> ${regulationImpact}</p>
+        <p><strong>Growth Focus:</strong> ${growthFocus}</p>
+    `;
 }
 function generateMotivationNarrative(data) {
 
     const { intrinsic, extrinsic, amotivation } = data;
 
-    if (amotivation > intrinsic && amotivation > extrinsic)
-        return "Motivational activation appears reduced. Reconnecting with autonomy and personal meaning may be beneficial.";
+    let interpretation = "";
+    let academicImpact = "";
+    let engagementPattern = "";
+    let regulationPattern = "";
+    let growthFocus = "";
 
-    if (intrinsic > extrinsic && intrinsic > amotivation)
-        return "Your motivation appears primarily internally driven by interest and curiosity.";
+    // 🔹 Amotivation Dominant
+    if (amotivation > intrinsic && amotivation > extrinsic) {
 
-    if (extrinsic > intrinsic)
-        return "External incentives and performance outcomes may significantly influence your engagement patterns.";
+        interpretation = "Your responses suggest reduced motivational activation at this time.";
 
-    return "Your motivation profile reflects a balanced integration of internal and external drivers.";
+        academicImpact = "You may find it harder to initiate tasks or sustain effort, particularly when work feels disconnected from personal meaning.";
+
+        engagementPattern = "Motivation may feel externally pressured or unclear rather than internally driven.";
+
+        regulationPattern = "Energy levels may fluctuate, especially during periods of academic overload.";
+
+        growthFocus = "Clarifying personal goals, reconnecting with purpose, and breaking tasks into smaller actionable steps may gradually restore engagement.";
+
+    }
+
+    // 🔹 Intrinsic Dominant
+    else if (intrinsic > extrinsic && intrinsic > amotivation) {
+
+        interpretation = "Your motivation appears primarily driven by internal interest and personal value.";
+
+        academicImpact = "You are likely to engage more deeply in tasks that feel meaningful or intellectually stimulating.";
+
+        engagementPattern = "Curiosity and self-direction appear to guide your effort patterns.";
+
+        regulationPattern = "Internal motivation often supports persistence even during moderate stress.";
+
+        growthFocus = "Maintaining alignment between coursework and personal interests may sustain long-term academic satisfaction.";
+
+    }
+
+    // 🔹 Extrinsic Dominant
+    else if (extrinsic > intrinsic && extrinsic > amotivation) {
+
+        interpretation = "External structure and outcomes appear to significantly influence your engagement.";
+
+        academicImpact = "Clear deadlines, evaluation criteria, and accountability systems may enhance your productivity.";
+
+        engagementPattern = "Performance expectations and recognition may play a meaningful role in sustaining effort.";
+
+        regulationPattern = "Motivation may fluctuate if structure or feedback is inconsistent.";
+
+        growthFocus = "Integrating personal meaning alongside external goals may strengthen long-term resilience.";
+
+    }
+
+    // 🔹 Balanced Profile
+    else {
+
+        interpretation = "Your motivation profile reflects a balanced integration of internal interest and external structure.";
+
+        academicImpact = "You likely adapt your effort patterns depending on context and expectations.";
+
+        engagementPattern = "Both personal value and performance standards contribute to your drive.";
+
+        regulationPattern = "Balanced motivation can support sustainable engagement across academic cycles.";
+
+        growthFocus = "Periodic reflection on goals may help maintain clarity and direction.";
+    }
+
+    return `
+        <p>${interpretation}</p>
+        <p><strong>Academic Context:</strong> ${academicImpact}</p>
+        <p><strong>Engagement Pattern:</strong> ${engagementPattern}</p>
+        <p><strong>Regulation Pattern:</strong> ${regulationPattern}</p>
+        <p><strong>Growth Focus:</strong> ${growthFocus}</p>
+    `;
 }
 
 // ---------------- START ----------------

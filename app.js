@@ -803,184 +803,105 @@ function renderFinalSummary() {
 
     const r = sessionState.results;
 
-    let html = `<h2>Assessment Summary 📊</h2>`;
-    let supportBlocks = "";
-    let counsellingShown = false;
+    let html = `
+<h2>Assessment Summary 📊</h2>
 
+<div class="summary-card">
+  <h3>Profile Snapshot</h3>
+  ${r.Personality ? `
+    <p><strong>Personality:</strong> Trait-based profile available</p>
+  ` : ""}
 
-    // ---------------- Personality ----------------
-    if (r.Personality) {
-        html += `<h3>Personality</h3>`;
-        for (let trait in r.Personality) {
-            html += `<p><strong>${trait}:</strong> ${r.Personality[trait]}</p>`;
-        }
-    }
+  ${r.Emotional_Intelligence ? `
+    <p><strong>Emotional Intelligence:</strong> ${r.Emotional_Intelligence.total}</p>
+  ` : ""}
 
-    // ---------------- Emotional Intelligence ----------------
-    if (r.Emotional_Intelligence) {
-        html += `
-        <h3>Emotional Intelligence</h3>
-        <p>Total EI Score: <strong>${r.Emotional_Intelligence.total}</strong></p>
-        `;
-    }
+  ${r.Happiness ? `
+    <p><strong>Happiness:</strong> ${r.Happiness.total} / 28</p>
+  ` : ""}
 
-    // ---------------- Happiness ----------------
-    if (r.Happiness) {
-        html += `
-        <h3>Happiness</h3>
-        <p>Total Happiness Score: <strong>${r.Happiness.total}</strong> / 28</p>
-        `;
-    }
+  ${r.Stress ? `
+    <p><strong>Stress:</strong> ${r.Stress.total} / 16</p>
+  ` : ""}
 
-    // ---------------- Stress ----------------
-    if (r.Stress) {
-        html += `
-        <h3>Stress</h3>
-        <p>Total Stress Score: <strong>${r.Stress.total}</strong> / 16</p>
-        `;
-        
-        // Counsellor Trigger
-        if (r.Stress.total >= 10) {
-            html += `
-            <div style="margin-top:15px; padding:15px; background:#ffe6e6; border-radius:8px;">
-            <strong>We noticed elevated stress levels.</strong><br>
-            It may be helpful to consider meeting Ms. Neha (Counselling Room – Block A, Ground Floor) later this month.
-            </div>
-            `;
-        }
-    }
-
-    // ---------------- Motivation ----------------
-    if (r.Motivation) {
-        html += `
-        <h3>Motivation Profile</h3>
-        <p><strong>Intrinsic:</strong> ${r.Motivation.intrinsic}</p>
-        <p><strong>Extrinsic:</strong> ${r.Motivation.extrinsic}</p>
-        <p><strong>Amotivation:</strong> ${r.Motivation.amotivation}</p>
-        `;
-    }
-
-    html += `
-    <br>
-    <button onclick="renderDashboard()">Back to Dashboard</button>
-    <button onclick="downloadReport()" style="margin-left:10px;background:#444;">
-    Download Report
-    </button>
-    `;
-
-    if (r.Happiness && r.Happiness.total <= 12) {
-
-    supportBlocks += `
-    <div class="support-card happiness">
-    <h3>🌼 Student Wellbeing Reflection</h3>
-    <p>Your responses suggest there may be space to enhance daily student happiness experiences.</p>
-    <p>If you’d like, you can share ideas that could help make university life more positive.</p>
-
-    <button onclick="window.open('https://forms.gle/HvzwyFR8W2UsGVpEA','_blank')">
-    Share Suggestion
-    </button>
-
-    <button onclick="this.parentElement.style.display='none'">
-    Skip
-    </button>
-    </div>
-    `;
-    }
-   
-  if (r.Stress && r.Stress.total >= 10) {
-
-  supportBlocks += `
-  <div class="support-card stress">
-  <h3>🌿 Support Reminder</h3>
-  <p>Your responses indicate elevated stress levels.</p>
-  <p>Sometimes speaking with a professional can be helpful.</p>
-  <p><strong>Ms. Neha</strong><br>
-  Counselling Room – Block A, Ground Floor</p>
-
-  <button onclick="window.open('https://forms.gle/qPGY49pDKXnqEyfbA','_blank')">
-  Request Confidential Conversation
-  </button>
-
-  <button onclick="this.parentElement.style.display='none'">
-  Skip
-  </button>
-  </div>
-  `;
-
-  counsellingShown = true;
-  }
-
-  if (r.Emotional_Intelligence && r.Emotional_Intelligence.total <= 24) {
-
-  supportBlocks += `
-  <div class="support-card ei">
-  <h3>🧠 Emotional Skills Growth</h3>
-  <p>Emotional intelligence is a developable skill.</p>
-  <p>With awareness and practice, emotional regulation and empathy can strengthen significantly over time.</p>
-  </div>
-  `;
-  }
-
-  if (
-  r.Motivation &&
-  r.Motivation.amotivation > r.Motivation.intrinsic &&
-  r.Motivation.amotivation > r.Motivation.extrinsic &&
-  !counsellingShown
-  ) {
-
-  supportBlocks += `
-  <div class="support-card motivation">
-  <h3>🎯 Direction & Motivation</h3>
-  <p>Your responses suggest you may be experiencing reduced drive or direction.</p>
-  <p>A reflective conversation could help explore goals and clarity.</p>
-  <p><strong>Ms. Neha</strong><br>
-  Counselling Room – Block A, Ground Floor</p>
-
-  <button onclick="window.open('https://forms.gle/qPGY49pDKXnqEyfbA','_blank')">
-  Request Confidential Conversation
-  </button>
-
-  <button onclick="this.parentElement.style.display='none'">
-  Skip
-  </button>
-  </div>
-  `;
-  }
-
-  const fullNarrative = generateFullNarrative();
-  const academicBlock = generateAcademicFunctioning();
-
-html += `
-
-<h3>Psychological Profile Overview</h3>
-
-<p>${fullNarrative}</p>
-
-${academicBlock}
-
+  ${r.Motivation ? `
+    <p><strong>Motivation:</strong> Intrinsic ${r.Motivation.intrinsic} | Extrinsic ${r.Motivation.extrinsic} | Amotivation ${r.Motivation.amotivation}</p>
+  ` : ""}
+</div>
 `;
 
-const report = generateStrengthWeaknessReport();
+/* =============================
+   Psychological Overview
+============================= */
 
 html += `
-<h3>Strength Indicators</h3>
-<ul>
-${report.strengths.length ? report.strengths.map(s => `<li>${s}</li>`).join("") : "<li>No prominent strengths identified in assessed domains.</li>"}
-</ul>
-
-<h3>Growth & Development Areas</h3>
-<ul>
-${report.growth.length ? report.growth.map(g => `<li>${g}</li>`).join("") : "<li>No major developmental flags detected.</li>"}
-</ul>
+<div class="summary-card">
+  <h3>Psychological Profile Overview</h3>
+  <p>${fullNarrative}</p>
+</div>
 `;
-  
-  if (supportBlocks !== "") {
+
+/* =============================
+   Academic Functioning
+============================= */
+
+html += academicBlock;
+
+/* =============================
+   Strengths
+============================= */
+
+html += `
+<div class="summary-card">
+  <h3>Strength Indicators</h3>
+  <ul>
+  ${report.strengths.length 
+      ? report.strengths.map(s => `<li>${s}</li>`).join("") 
+      : "<li>No prominent strengths identified in assessed domains.</li>"}
+  </ul>
+</div>
+`;
+
+/* =============================
+   Growth Areas
+============================= */
+
+html += `
+<div class="summary-card">
+  <h3>Growth & Development Areas</h3>
+  <ul>
+  ${report.growth.length 
+      ? report.growth.map(g => `<li>${g}</li>`).join("") 
+      : "<li>No major developmental flags detected.</li>"}
+  </ul>
+</div>
+`;
+
+/* =============================
+   Support Blocks
+============================= */
+
+if (supportBlocks !== "") {
   html += `
-  <h3>Support & Reflection</h3>
-  ${supportBlocks}
+  <div class="summary-card">
+    <h3>Support & Reflection</h3>
+    ${supportBlocks}
+  </div>
   `;
- }
+}
 
+/* =============================
+   Action Buttons
+============================= */
+
+html += `
+<div class="summary-actions">
+  <button onclick="renderDashboard()">Back to Dashboard</button>
+  <button onclick="downloadReport()" style="margin-left:10px;background:#444;">
+    Download Report
+  </button>
+</div>
+`;
 
     render(html);
 }

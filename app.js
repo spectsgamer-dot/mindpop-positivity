@@ -815,11 +815,11 @@ const academicBlock = generateAcademicFunctioning();
  ${r.Personality ? `
   <div>
     <strong>Personality:</strong><br>
-    Extraversion: ${r.Personality.extraversion}<br>
-    Agreeableness: ${r.Personality.agreeableness}<br>
-    Conscientiousness: ${r.Personality.conscientiousness}<br>
-    Neuroticism: ${r.Personality.neuroticism}<br>
-    Openness: ${r.Personality.openness}
+   Extraversion: ${r.Personality.Extraversion}<br>
+   Agreeableness: ${r.Personality.Agreeableness}<br>
+   Conscientiousness: ${r.Personality.Conscientiousness}<br>
+   Neuroticism: ${r.Personality.Neuroticism}<br>
+   Openness: ${r.Personality.Openness}
   </div>
 ` : ""}
 

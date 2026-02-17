@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxA5Bpoz5nQ0FwtL9v7WPKSBn3su_xqtXbLzJe74Lx8KtXWMRdreZXwyp3zNVeCUQTw/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
 
 // ---------------- SESSION ----------------
 
@@ -475,7 +475,15 @@ function submitTest(testName) {
             sessionState.completedTests.push("Personality");
         }
 
-        sessionState.results.Personality = traits;
+       sessionState.results.Personality = {
+  raw: responses,
+  Extraversion: traits.Extraversion,
+  Agreeableness: traits.Agreeableness,
+  Conscientiousness: traits.Conscientiousness,
+  Neuroticism: traits.Neuroticism,
+  Openness: traits.Openness
+};
+
         renderPersonalityResult(traits);
         return;
     }
@@ -491,8 +499,11 @@ function submitTest(testName) {
             sessionState.completedTests.push("Emotional_Intelligence");
         }
 
-        sessionState.results.Emotional_Intelligence = {
-           total: totalEI
+       sessionState.results.Emotional_Intelligence = {
+   raw: responses,
+   total: totalEI
+};
+
         };
        const insight = getShortInsight(
     "Emotional_Intelligence",
@@ -535,8 +546,11 @@ Finish Assessment
         sessionState.completedTests.push("Happiness");
     }
 
-    sessionState.results.Happiness = {
-       total: totalHappiness
+   sessionState.results.Happiness = {
+   raw: responses,
+   total: totalHappiness
+};
+
   };
     const insight = getShortInsight("Happiness", sessionState.results.Happiness);
 
@@ -577,8 +591,11 @@ Finish Assessment
         sessionState.completedTests.push("Stress");
     }
 
-    sessionState.results.Stress = {
-       total: totalStress
+   sessionState.results.Stress = {
+   raw: responses,
+   total: totalStress
+};
+
     };
   const insight = getShortInsight("Stress", sessionState.results.Stress);
 
@@ -629,9 +646,12 @@ Finish Assessment
     }
 
     sessionState.results.Motivation = {
-        intrinsic,
-        extrinsic,
-        amotivation
+   raw: responses,
+   intrinsic,
+   extrinsic,
+   amotivation
+};
+
     };
 
     // 🔹 Level Classification
@@ -1591,7 +1611,7 @@ function generateMotivationNarrative(data) {
     `;
 }
 function sendToBackend() {
-  const endpoint = "https://script.google.com/macros/s/AKfycbxA5Bpoz5nQ0FwtL9v7WPKSBn3su_xqtXbLzJe74Lx8KtXWMRdreZXwyp3zNVeCUQTw/exec";
+  const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
 
   fetch(endpoint, {
     method: "POST",
@@ -1605,7 +1625,7 @@ function sendToBackend() {
   .catch(err => console.error("Backend error:", err));
 }
 function fetchData() {
-  const endpoint = "https://script.google.com/macros/s/AKfycbxA5Bpoz5nQ0FwtL9v7WPKSBn3su_xqtXbLzJe74Lx8KtXWMRdreZXwyp3zNVeCUQTw/exec";
+  const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
 
   fetch(endpoint)
     .then(res => res.json())

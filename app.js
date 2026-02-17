@@ -504,7 +504,6 @@ function submitTest(testName) {
    total: totalEI
 };
 
-        };
        const insight = getShortInsight(
     "Emotional_Intelligence",
     sessionState.results.Emotional_Intelligence
@@ -549,7 +548,6 @@ Finish Assessment
    sessionState.results.Happiness = {
    raw: responses,
    total: totalHappiness
-};
 
   };
     const insight = getShortInsight("Happiness", sessionState.results.Happiness);
@@ -594,7 +592,6 @@ Finish Assessment
    sessionState.results.Stress = {
    raw: responses,
    total: totalStress
-};
 
     };
   const insight = getShortInsight("Stress", sessionState.results.Stress);
@@ -650,7 +647,6 @@ Finish Assessment
    intrinsic,
    extrinsic,
    amotivation
-};
 
     };
 

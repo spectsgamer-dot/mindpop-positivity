@@ -812,17 +812,16 @@ resultHTML += `
 
 function renderFinalSummary() {
 
-const r = sessionState.results;
+    const r = sessionState.results;
 
-const fullNarrative = generateFullNarrative();
-const report = generateStrengthWeaknessReport();
-const academicBlock = generateAcademicFunctioning();
-const riskTierBlock = generateRiskTier();
+    const fullNarrative = generateFullNarrative();
+    const report = generateStrengthWeaknessReport();
+    const academicBlock = generateAcademicFunctioning();
+    const riskTierBlock = generateRiskTier();
 
+    let html = `<h2>Assessment Summary 📊</h2>`;
 
-    let html = `
-<h2>Assessment Summary 📊</h2>
-html += riskTierBlock;
+    html += riskTierBlock;
 
 <div class="summary-card">
   <h3>Profile Snapshot</h3>
@@ -895,18 +894,18 @@ html += `
 </div>
 `;
 
-/* =============================
-   Support Blocks
-============================= */
+// /* =============================
+//    Support Blocks
+// ============================= */
 
-if (supportBlocks !== "") {
-  html += `
-  <div class="summary-card">
-    <h3>Support & Reflection</h3>
-    ${supportBlocks}
-  </div>
-  `;
-}
+// if (supportBlocks !== "") {
+//   html += `
+//   <div class="summary-card">
+//     <h3>Support & Reflection</h3>
+//     ${supportBlocks}
+//   </div>
+//   `;
+// }
 
 /* =============================
    Action Buttons

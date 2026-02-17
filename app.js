@@ -882,19 +882,6 @@ html += `
 `;
 
 /* =============================
-   Support Blocks
-============================= */
-
-if (supportBlocks !== "") {
-  html += `
-  <div class="summary-card">
-    <h3>Support & Reflection</h3>
-    ${supportBlocks}
-  </div>
-  `;
-}
-
-/* =============================
    Action Buttons
 ============================= */
 

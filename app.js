@@ -242,6 +242,7 @@ render(`
       <option value="Humanities & Social Sciences">Humanities & Social Sciences</option>
       <option value="Sciences">Sciences</option>
       <option value="Paramedical Sciences">Paramedical Sciences</option>
+       <option value="Pharmaceutical Sciences">Pharmaceutical Sciences</option>
       <option value="Engineering">Engineering</option>
       <option value="Computer Technology">Computer Technology</option>
       <option value="Nursing">Nursing</option>

@@ -311,7 +311,6 @@ if (pursuing !== "Faculty" && !year) {
 }
 
   sessionState.demographics = {
-    persistSession();
   name: document.getElementById("name").value,
   gender: document.getElementById("gender").value,
   department: document.getElementById("department").value, // ✅ ADD THIS
@@ -319,7 +318,7 @@ if (pursuing !== "Faculty" && !year) {
   facultyExperience: document.getElementById("facultyExperience")?.value || "",
   year: document.getElementById("year").value
 };
-
+ persistSession();
 
   renderDashboard();
 }

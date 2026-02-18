@@ -1604,18 +1604,26 @@ function restartAssessment() {
 }
 
 function sendToBackend() {
-  const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
+ function sendToBackend() {
 
-  fetch(endpoint, {
+  fetch(WEB_APP_URL, {
     method: "POST",
-    mode: "no-cors",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify(sessionState)
   })
-  .then(() => console.log("Data sent"))
+  .then(res => res.json())
+  .then(data => {
+    console.log("Server response:", data);
+
+    if (data.percentiles) {
+      sessionState.percentiles = data.percentiles;
+    }
+  })
   .catch(err => console.error("Backend error:", err));
+}
+
 }
 function fetchData() {
   const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";

@@ -3,7 +3,7 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgz
 // ---------------- SESSION ----------------
 let summarySubmitted = false;
 
-let sessionState = {
+let sessionState = JSON.parse(localStorage.getItem("mindpop_session")) || {
   anonId: "",
   demographics: {},
   completedTests: [],
@@ -140,7 +140,7 @@ const scales = {
   ]
 }
 };
-
+  
 // ---------------- UTILITY ----------------
 
 function generateAnonId() {
@@ -155,6 +155,8 @@ function render(content) {
     <div class="card">${content}</div>
   `;
 }
+function persistSession() {
+  localStorage.setItem("mindpop_session", JSON.stringify(sessionState));
 
 // ---------------- CONSENT ----------------
 
@@ -186,6 +188,7 @@ function renderConsent() {
 
 function acceptConsent() {
   sessionState.anonId = generateAnonId();
+  persistSession();
   renderDemographics();
 }
 function refuseConsent() {
@@ -308,6 +311,7 @@ if (pursuing !== "Faculty" && !year) {
 }
 
   sessionState.demographics = {
+    persistSession();
   name: document.getElementById("name").value,
   gender: document.getElementById("gender").value,
   department: document.getElementById("department").value, // ✅ ADD THIS
@@ -444,6 +448,8 @@ function updateProgress(total) {
 
 function submitTest(testName) {
 
+  sessionState.completedTests.push(testName);
+persistSession();
     const scale = scales[testName];
     const form = document.getElementById("testForm");
     const data = new FormData(form);
@@ -1670,9 +1676,8 @@ function generateMotivationNarrative(data) {
     `;
 }
 function restartAssessment() {
-    localStorage.removeItem("mindpopSession");
-    summarySubmitted = false;
-    location.reload();
+  localStorage.removeItem("mindpop_session");
+  location.reload();
 }
 
 function sendToBackend() {

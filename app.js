@@ -184,7 +184,7 @@ function acceptConsent() {
 }
 function refuseConsent() {
   render(`
-    <h1>😔 Consent Required</h1>
+    <h2>😔 Consent Required</h2>
 
     <p>
       Participation requires informed consent.

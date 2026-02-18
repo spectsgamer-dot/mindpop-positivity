@@ -379,9 +379,6 @@ function renderDashboard() {
                </button>`
             : ""
         }
-        <button onclick="restartAssessment()">
-Start New Assessment
-</button>
 
         ${restartButton}
     `);
@@ -450,6 +447,8 @@ function updateProgress(total) {
 
 function submitTest(testName) {
 
+  sessionState.completedTests.push(testName);
+persistSession();
     const scale = scales[testName];
     const form = document.getElementById("testForm");
     const data = new FormData(form);
@@ -1598,15 +1597,10 @@ function generateMotivationNarrative(data) {
         <p><strong>Regulation Pattern:</strong> ${regulationPattern}</p>
         <p><strong>Growth Focus:</strong> ${growthFocus}</p>
     `;
+}
 function restartAssessment() {
-    sessionState = {
-        anonId: crypto.randomUUID(),
-        demographics: {},
-        completedTests: [],
-        results: {}
-    };
-    localStorage.clear();
-    renderConsent();
+  localStorage.removeItem("mindpop_session");
+  location.reload();
 }
 
 function sendToBackend() {

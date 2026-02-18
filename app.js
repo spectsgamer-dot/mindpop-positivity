@@ -980,9 +980,9 @@ html += `
 html += `
 <div class="summary-actions">
   <button onclick="renderDashboard()">Back to Dashboard</button>
-  <button onclick="downloadReport()" style="margin-left:10px;background:#444;">
-    Download Report
-  </button>
+  <button class="secondary" onclick="downloadReport() tyle="margin-left:10px;background:#444;"">
+  Download Report
+</button>
 </div>
 `;
 html += supportBlock;

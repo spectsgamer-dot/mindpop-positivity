@@ -201,5 +201,9 @@ button:hover {
 .summary-actions {
   margin-top: 25px;
 }
+.support-card {
+  border-left: 4px solid #ff9800;
+  background: #fff8e1;
+}
 
 

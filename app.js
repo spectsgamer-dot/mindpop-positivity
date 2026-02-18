@@ -821,6 +821,53 @@ function renderFinalSummary() {
   sendToBackend();
 
 const r = sessionState.results;
+let supportBlock = "";
+
+// -------- HIGH STRESS --------
+if (r.Stress?.total >= 12) {
+  supportBlock += `
+    <div class="summary-card support-card">
+      <h3>Support Recommendation</h3>
+      <p>Your responses suggest elevated stress levels. It may be helpful to speak with Ms. Neha at the University Counselling Room (Block A, Ground Floor).</p>
+      <a href="https://forms.gle/qPGY49pDKXnqEyfbA" target="_blank" class="primary-btn">
+        Request Counselling Support
+      </a>
+    </div>
+  `;
+}
+
+// -------- LOW HAPPINESS --------
+if (r.Happiness?.total <= 14) {
+  supportBlock += `
+    <div class="summary-card support-card">
+      <h3>Help Improve Campus Wellbeing</h3>
+      <p>If you feel your university experience could be more fulfilling, you may share suggestions with us.</p>
+      <a href="https://forms.gle/HvzwyFR8W2UsGVpEA" target="_blank" class="primary-btn">
+        Share Feedback
+      </a>
+    </div>
+  `;
+}
+
+// -------- HIGH AMOTIVATION --------
+if (r.Motivation?.amotivation > r.Motivation?.intrinsic) {
+  supportBlock += `
+    <div class="summary-card support-card">
+      <h3>Motivational Support</h3>
+      <p>Your responses suggest reduced academic drive. Structured academic mentoring or counselling may help re-align goals.</p>
+    </div>
+  `;
+}
+
+// -------- LOW EI --------
+if (r.Emotional_Intelligence?.total <= 25) {
+  supportBlock += `
+    <div class="summary-card support-card">
+      <h3>Emotional Skill Development</h3>
+      <p>Emotional intelligence is a developable capacity. Workshops and guided reflection sessions can strengthen regulation and empathy skills.</p>
+    </div>
+  `;
+}
 
 const fullNarrative = generateFullNarrative();
 const report = generateStrengthWeaknessReport();
@@ -919,6 +966,7 @@ html += `
   </button>
 </div>
 `;
+html += supportBlock;
 
     render(html);
 }

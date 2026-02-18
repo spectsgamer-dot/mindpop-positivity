@@ -1,6 +1,7 @@
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
 
 // ---------------- SESSION ----------------
+let summarySubmitted = false;
 
 let sessionState = {
   anonId: "",
@@ -15,6 +16,11 @@ let sessionState = {
     Motivation: null
   }
 };
+const savedSession = localStorage.getItem("mindpopSession");
+
+if (savedSession) {
+    sessionState = JSON.parse(savedSession);
+}
 
 // ---------------- SCALE DEFINITIONS ----------------
 
@@ -690,6 +696,8 @@ Finish Assessment
 
     return;
 }
+  localStorage.setItem("mindpopSession", JSON.stringify(sessionState));
+
 }
 
 function interpretTrait(score) {
@@ -822,7 +830,10 @@ resultHTML += `
 
 function renderFinalSummary() {
 
-  sendToBackend();
+ if (!summarySubmitted) {
+    sendToBackend();
+    summarySubmitted = true;
+}
 
 const r = sessionState.results;
 let supportBlock = "";
@@ -1659,6 +1670,12 @@ function generateMotivationNarrative(data) {
         <p><strong>Growth Focus:</strong> ${growthFocus}</p>
     `;
 }
+function restartAssessment() {
+    localStorage.removeItem("mindpopSession");
+    summarySubmitted = false;
+    location.reload();
+}
+
 function sendToBackend() {
   const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
 

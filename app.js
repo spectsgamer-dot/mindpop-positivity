@@ -16,7 +16,7 @@ let sessionState = JSON.parse(localStorage.getItem("mindpop_session")) || {
     Motivation: null
   }
 };
-const savedSession = localStorage.getItem("mindpopSession");
+const savedSession = localStorage.getItem("mindpop_session");
 
 if (savedSession) {
     sessionState = JSON.parse(savedSession);
@@ -157,7 +157,7 @@ function render(content) {
 }
 function persistSession() {
   localStorage.setItem("mindpop_session", JSON.stringify(sessionState));
-
+}
 // ---------------- CONSENT ----------------
 
 function renderConsent() {
@@ -987,7 +987,7 @@ html += `
 </div>
 `;
 html += supportBlock;
-localStorage.setItem("mindpopSession", JSON.stringify(sessionState));
+localStorage.setItem("mindpop_session", JSON.stringify(sessionState));
     render(html);
 }
 function resetAssessment() {
@@ -1041,23 +1041,7 @@ function downloadReport() {
 
   URL.revokeObjectURL(url);
 }
-function restartAssessment() {
 
-  sessionState = {
-    anonId: "",
-    demographics: {},
-    completedTests: [],
-    results: {
-      Personality: null,
-      Emotional_Intelligence: null,
-      Happiness: null,
-      Stress: null,
-      Motivation: null
-    }
-  };
-
-  renderConsent();
-}
 function handlePursuingChange() {
   const pursuing = document.getElementById("pursuing").value;
 

@@ -696,7 +696,6 @@ Finish Assessment
 
     return;
 }
-  localStorage.setItem("mindpopSession", JSON.stringify(sessionState));
 
 }
 
@@ -982,7 +981,7 @@ html += `
 </div>
 `;
 html += supportBlock;
-
+localStorage.setItem("mindpopSession", JSON.stringify(sessionState));
     render(html);
 }
 function resetAssessment() {
@@ -1700,4 +1699,8 @@ function fetchData() {
 
 // ---------------- START ----------------
 
-renderConsent();
+if (sessionState.completedTests.length > 0) {
+    renderDashboard();
+} else {
+    renderConsent();
+}

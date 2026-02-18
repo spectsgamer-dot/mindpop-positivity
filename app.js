@@ -154,15 +154,19 @@ function render(content) {
 
 function renderConsent() {
   render(`
-    <h2>😊 Welcome to MindPop</h2>
+    <h1>😊 Welcome to MindPop</h1>
+    <h2> Consent & Participation Notice</h2>
 
     <p>
-      This assessment is anonymous and conducted for academic analysis
-      of student emotional wellbeing.
+      This assessment is designed for educational and self-reflection purposes within the university setting. Participation is voluntary and anonymous.
     </p>
 
     <p>
-      This is not a clinical diagnosis, but a brief self-awareness tool.
+     Your responses may be used in aggregated form to support university-level psychological insights and wellbeing initiatives. Individual results are not diagnostic and do not replace professional mental health consultation.
+    </p>
+
+    <p>
+      By proceeding, you confirm that you understand the purpose of this assessment and consent to participate.
     </p>
 
     <div style="margin-top:20px;">
@@ -180,7 +184,7 @@ function acceptConsent() {
 }
 function refuseConsent() {
   render(`
-    <h2>😔 Consent Required</h2>
+    <h1>😔 Consent Required</h1>
 
     <p>
       Participation requires informed consent.

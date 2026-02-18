@@ -154,8 +154,8 @@ function render(content) {
 
 function renderConsent() {
   render(`
-    <h1>😊 Welcome to MindPop</h1>
-    <h2> Consent & Participation Notice</h2>
+    <h2>😊 Welcome to MindPop</h2>
+    <h4> Consent & Participation Notice</h4>
 
     <p>
       This assessment is designed for educational and self-reflection purposes within the university setting. Participation is voluntary and anonymous.

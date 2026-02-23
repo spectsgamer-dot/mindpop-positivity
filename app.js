@@ -28,7 +28,7 @@ const scales = {
   Personality: {
     items: 10,
     likert: 5,
-    reverse: [2,4,6,8,10],
+    reverse: [1,3,4,5,7],
     labels: [
       "Strongly Disagree",
       "Disagree",

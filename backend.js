@@ -1,6 +1,6 @@
 import { sessionState, WEB_APP_URL } from "./state.js";
 function sendToBackend() {
-  const endpoint = "xyxz/exedc";
+  const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
 
   fetch(endpoint, {
     method: "POST",
@@ -14,7 +14,7 @@ function sendToBackend() {
   .catch(err => console.error("Backend error:", err));
 }
 function fetchData() {
-  const endpoint = "xyxz/exedc";
+  const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
 
   fetch(endpoint)
     .then(res => res.json())

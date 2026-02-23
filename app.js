@@ -1,6 +1,7 @@
 import { sessionState, persistSession, summarySubmitted } from "./state.js";
 import { scales } from "./scales.js";
 import { startTest } from "./testEngine.js";
+import { render } from "./core.js";
   
 // ---------------- UTILITY ----------------
 
@@ -11,11 +12,6 @@ function generateAnonId() {
   return `${timestamp}-${random}`;
 }
 
-function render(content) {
-  document.getElementById("app").innerHTML = `
-    <div class="card">${content}</div>
-  `;
-}
 // ---------------- CONSENT ----------------
 
 function renderConsent() {

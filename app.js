@@ -1,28 +1,4 @@
-const WEB_APP_URL = "xyxz/exedc";
-
-// ---------------- SESSION ----------------
-let summarySubmitted = false;
-
-let sessionState = JSON.parse(localStorage.getItem("mindpop_session")) || {
-  anonId: "",
-  demographics: {},
-  completedTests: [],
-
-  results: {
-    Personality: null,
-    Emotional_Intelligence: null,
-    Happiness: null,
-    Stress: null,
-    Motivation: null
-  }
-};
-const savedSession = localStorage.getItem("mindpop_session");
-
-if (savedSession) {
-    sessionState = JSON.parse(savedSession);
-}
-
-// ---------------- SCALE DEFINITIONS ----------------
+import { sessionState, persistSession, summarySubmitted } from "./state.js";
 
 const scales = {
   Personality: {
@@ -154,9 +130,6 @@ function render(content) {
   document.getElementById("app").innerHTML = `
     <div class="card">${content}</div>
   `;
-}
-function persistSession() {
-  localStorage.setItem("mindpop_session", JSON.stringify(sessionState));
 }
 // ---------------- CONSENT ----------------
 

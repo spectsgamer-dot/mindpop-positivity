@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
+const WEB_APP_URL = "xyxz/exedc";
 
 // ---------------- SESSION ----------------
 let summarySubmitted = false;
@@ -1665,7 +1665,7 @@ function restartAssessment() {
 }
 
 function sendToBackend() {
-  const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
+  const endpoint = "xyxz/exedc";
 
   fetch(endpoint, {
     method: "POST",
@@ -1679,7 +1679,7 @@ function sendToBackend() {
   .catch(err => console.error("Backend error:", err));
 }
 function fetchData() {
-  const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
+  const endpoint = "xyxz/exedc";
 
   fetch(endpoint)
     .then(res => res.json())

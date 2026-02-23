@@ -53,5 +53,13 @@ function startTest(testName) {
 
   export { startTest };
 
+  function updateProgress(total) {
+  const checked = document.querySelectorAll("input[type=radio]:checked");
+  const answered = new Set();
+  checked.forEach(r => answered.add(r.name));
+  const percent = (answered.size / total) * 100;
+  document.getElementById("progressFill").style.width = percent + "%";
+}
+
   
 }

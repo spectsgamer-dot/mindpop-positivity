@@ -1,6 +1,6 @@
 // js/state.js
 
-export const WEB_APP_URL = "xyxz/exedc";
+export const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
 
 export let summarySubmitted = false;
 

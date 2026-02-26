@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyDdsZR8AFAU0-CBF8JImsl8JbtPBrUjnIAEYMnO30blBOmMqiIITa--Hp3M_AOzAThJA/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwtD3CzKvIpJvgjnpL4C3mJnOjgekySWh8t0Cq1na2QG_jb6MXpWNxkPHCGmy5BhDot3Q/exec";
 
 // ---------------- SESSION ----------------
 

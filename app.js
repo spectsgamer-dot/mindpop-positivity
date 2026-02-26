@@ -391,6 +391,14 @@ function renderDashboard() {
         <br><br>
         ${restartButton}
     `);
+  if (sessionState.completedTests.length === 5) {
+  html += `
+    <br><br>
+    <button onclick="restartAssessment()" style="background:#d9534f;color:white;">
+      Restart Assessment
+    </button>
+  `;
+}
 }
 
 // ---------------- TEST ENGINE ----------------
@@ -558,8 +566,6 @@ ${interpretation}
 
 <br><br>
 <button onclick="renderDashboard()">Do Another Test</button>
-<button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
-Finish Assessment
 </button>
 `);
     }
@@ -604,8 +610,6 @@ ${interpretation}
 
 <br><br>
 <button onclick="renderDashboard()">Do Another Test</button>
-<button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
-Finish Assessment
 </button>
 `);
     return;
@@ -650,8 +654,6 @@ ${interpretation}
 
 <br><br>
 <button onclick="renderDashboard()">Do Another Test</button>
-<button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
-Finish Assessment
 </button>
 `);
 
@@ -705,17 +707,20 @@ Finish Assessment
     render(`
         <h2>Motivation Profile</h2>
 
-        <p><strong>Intrinsic Motivation:</strong> ${intrinsic} (${intrinsicLevel})</p>
-        <p><strong>Extrinsic Motivation:</strong> ${extrinsic} (${extrinsicLevel})</p>
-        <p><strong>Amotivation:</strong> ${amotivation} (${amotivationLevel})</p>
+  <h3>Intrinsic Motivation: ${r.Motivation.intrinsic}</h3>
+  <p>${interpretIntrinsic(r.Motivation.intrinsic)}</p>
+
+  <h3>Extrinsic Motivation: ${r.Motivation.extrinsic}</h3>
+  <p>${interpretExtrinsic(r.Motivation.extrinsic)}</p>
+
+  <h3>Amotivation: ${r.Motivation.amotivation}</h3>
+  <p>${interpretAmotivation(r.Motivation.amotivation)}</p>
 
         <br>
         <p>${narrative}</p>
 
         <br><br>
         <button onclick="renderDashboard()">Do Another Test</button>
-        <button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
-        Finish Assessment
         </button>
     `);
 
@@ -792,6 +797,18 @@ function showTestResult(testName) {
         `);
         return;
     }
+}
+function restartAssessment() {
+
+  if (!confirm("This will erase all your current results. Continue?")) {
+    return;
+  }
+
+  sessionState.completedTests = [];
+  sessionState.results = {};
+
+  persistSession();
+  renderDashboard();
 }
 
 function interpretTrait(score) {
@@ -1274,6 +1291,76 @@ function generateMotivationNarrative(data) {
     }
 
     return message;
+}
+function interpretIntrinsic(score) {
+
+  if (score >= 8) {
+    return `
+    You seem to be driven mainly by genuine interest and personal meaning.
+    When something feels important or engaging to you, effort comes naturally.
+    This type of motivation usually supports long-term satisfaction and deeper learning.
+    `;
+  }
+
+  if (score <= 4) {
+    return `
+    You may not always feel internally connected to your tasks.
+    Sometimes activities may feel more like obligations than personal interests.
+    Exploring what truly excites or challenges you could strengthen this inner drive.
+    `;
+  }
+
+  return `
+  Your internal motivation appears fairly balanced.
+  You may feel interested in some areas while relying on structure in others.
+  Reflecting on what personally matters to you can help maintain clarity.
+  `;
+}
+function interpretExtrinsic(score) {
+
+  if (score >= 8) {
+    return `
+    External goals, recognition, deadlines, or expectations may strongly influence your effort.
+    Clear structure and accountability likely help you stay focused and productive.
+    Combining this with personal meaning can make your motivation even stronger.
+    `;
+  }
+
+  if (score <= 4) {
+    return `
+    External rewards or pressures may not strongly influence your motivation.
+    You might rely more on personal interest than external validation.
+    In structured environments, setting clear goals may help maintain direction.
+    `;
+  }
+
+  return `
+  You seem to respond moderately to external expectations and structure.
+  Depending on the situation, deadlines or rewards may support your effort.
+  `;
+}
+function interpretAmotivation(score) {
+
+  if (score >= 8) {
+    return `
+    You may sometimes feel disconnected from your tasks or unsure about the purpose behind them.
+    This can make starting or sustaining effort more difficult.
+    Clarifying goals and reconnecting with personal meaning may help restore momentum.
+    `;
+  }
+
+  if (score <= 4) {
+    return `
+    You generally do not appear disengaged from your work.
+    Even when tasks feel challenging, you likely find some reason to continue.
+    `;
+  }
+
+  return `
+  You may occasionally feel uncertain about your direction,
+  but this does not appear to dominate your overall motivation.
+  Periodic reflection can help maintain clarity.
+  `;
 }
 function restartAssessment() {
   localStorage.removeItem("mindpop_session");

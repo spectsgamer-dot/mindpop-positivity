@@ -231,7 +231,6 @@ render(`
   <label>Phone Number (Required)</label>
   <input type="tel" id="phone" placeholder="Enter 10-digit number">
 </div>
-<input type="text" id="name">
 
   <div class="form-group">
     <label>Gender</label>
@@ -391,14 +390,6 @@ function renderDashboard() {
         <br><br>
         ${restartButton}
     `);
-  if (sessionState.completedTests.length === 5) {
-  html += `
-    <br><br>
-    <button onclick="restartAssessment()" style="background:#d9534f;color:white;">
-      Restart Assessment
-    </button>
-  `;
-}
 }
 
 // ---------------- TEST ENGINE ----------------
@@ -464,8 +455,6 @@ function updateProgress(total) {
 
 function submitTest(testName) {
 
-  sessionState.completedTests.push(testName);
-persistSession();
     const scale = scales[testName];
     const form = document.getElementById("testForm");
     const data = new FormData(form);
@@ -516,6 +505,9 @@ persistSession();
   Neuroticism: traits.Neuroticism,
   Openness: traits.Openness
 };
+      if (!sessionState.completedTests.includes(testName)) {
+    sessionState.completedTests.push(testName);
+}
       persistSession();
       sendToBackend();
 
@@ -551,6 +543,9 @@ else level = "Higher Range";
 
 const interpretation = generateEINarrative(totalEI);
 
+      if (!sessionState.completedTests.includes(testName)) {
+    sessionState.completedTests.push(testName);
+}
       persistSession();
       sendToBackend();
 
@@ -566,7 +561,6 @@ ${interpretation}
 
 <br><br>
 <button onclick="renderDashboard()">Do Another Test</button>
-</button>
 `);
     }
 
@@ -595,6 +589,9 @@ else if (totalHappiness <= 20) level = "Moderate Range";
 else level = "Higher Range";
 
 const interpretation = generateHappinessNarrative(totalHappiness);
+    if (!sessionState.completedTests.includes(testName)) {
+    sessionState.completedTests.push(testName);
+}
     persistSession();
     sendToBackend();
 
@@ -610,7 +607,6 @@ ${interpretation}
 
 <br><br>
 <button onclick="renderDashboard()">Do Another Test</button>
-</button>
 `);
     return;
 }
@@ -639,6 +635,9 @@ else if (totalStress <= 9) level = "Moderate Stress";
 else level = "Elevated Stress";
 
 const interpretation = generateStressNarrative(totalStress);
+    if (!sessionState.completedTests.includes(testName)) {
+    sessionState.completedTests.push(testName);
+}
     persistSession();
     sendToBackend();
 
@@ -654,7 +653,6 @@ ${interpretation}
 
 <br><br>
 <button onclick="renderDashboard()">Do Another Test</button>
-</button>
 `);
 
 
@@ -701,28 +699,30 @@ ${interpretation}
    const narrative = generateMotivationNarrative(
     sessionState.results.Motivation
 );
+    if (!sessionState.completedTests.includes(testName)) {
+    sessionState.completedTests.push(testName);
+}
     persistSession();
     sendToBackend();
 
-    render(`
-        <h2>Motivation Profile</h2>
+   render(`
+  <h2>Motivation Profile</h2>
 
-  <h3>Intrinsic Motivation: ${r.Motivation.intrinsic}</h3>
-  <p>${interpretIntrinsic(r.Motivation.intrinsic)}</p>
+  <h3>Intrinsic Motivation: ${intrinsic}</h3>
+  <p>${interpretIntrinsic(intrinsic)}</p>
 
-  <h3>Extrinsic Motivation: ${r.Motivation.extrinsic}</h3>
-  <p>${interpretExtrinsic(r.Motivation.extrinsic)}</p>
+  <h3>Extrinsic Motivation: ${extrinsic}</h3>
+  <p>${interpretExtrinsic(extrinsic)}</p>
 
-  <h3>Amotivation: ${r.Motivation.amotivation}</h3>
-  <p>${interpretAmotivation(r.Motivation.amotivation)}</p>
+  <h3>Amotivation: ${amotivation}</h3>
+  <p>${interpretAmotivation(amotivation)}</p>
 
-        <br>
-        <p>${narrative}</p>
+  <br>
+  <p>${narrative}</p>
 
-        <br><br>
-        <button onclick="renderDashboard()">Do Another Test</button>
-        </button>
-    `);
+  <br><br>
+  <button onclick="renderDashboard()">Do Another Test</button>
+`);
 
     return;
 }
@@ -797,18 +797,6 @@ function showTestResult(testName) {
         `);
         return;
     }
-}
-function restartAssessment() {
-
-  if (!confirm("This will erase all your current results. Continue?")) {
-    return;
-  }
-
-  sessionState.completedTests = [];
-  sessionState.results = {};
-
-  persistSession();
-  renderDashboard();
 }
 
 function interpretTrait(score) {

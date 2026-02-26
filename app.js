@@ -1,7 +1,6 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyDdsZR8AFAU0-CBF8JImsl8JbtPBrUjnIAEYMnO30blBOmMqiIITa--Hp3M_AOzAThJA/exec";
 
 // ---------------- SESSION ----------------
-let summarySubmitted = false;
 
 let sessionState = JSON.parse(localStorage.getItem("mindpop_session")) || {
   anonId: "",
@@ -352,22 +351,21 @@ function renderDashboard() {
 
     function testButton(name) {
 
-        const isDone = sessionState.completedTests.includes(name);
+    const isDone = sessionState.completedTests.includes(name);
 
-        return `
-            <button 
-                onclick="${isDone ? '' : `startTest('${name}')`}" 
-                style="
-                    margin:5px;
-                    opacity:${isDone ? 0.6 : 1};
-                    cursor:${isDone ? 'not-allowed' : 'pointer'};
-                "
-                ${isDone ? 'disabled' : ''}
-            >
-                ${name.replace("_", " ")} ${isDone ? "✓" : ""}
-            </button>
-        `;
-    }
+    return `
+        <button 
+            onclick="${
+                isDone 
+                ? `showTestResult('${name}')` 
+                : `startTest('${name}')`
+            }"
+            style="margin:5px;"
+        >
+            ${name.replace("_", " ")} ${isDone ? "✓" : ""}
+        </button>
+    `;
+}
 
     // 🔥 THIS MUST BE OUTSIDE TEMPLATE
     let restartButton = "";
@@ -391,16 +389,6 @@ function renderDashboard() {
         ${testButton("Motivation")}
 
         <br><br>
-
-        ${
-            completed >= 1
-            ? `<button onclick="renderFinalSummary()" 
-                     style="background:#444; margin-top:10px;">
-                 End Assessment
-               </button>`
-            : ""
-        }
-
         ${restartButton}
     `);
 }
@@ -520,6 +508,8 @@ persistSession();
   Neuroticism: traits.Neuroticism,
   Openness: traits.Openness
 };
+      persistSession();
+      sendToBackend();
 
         renderPersonalityResult(traits);
         return;
@@ -552,6 +542,9 @@ else if (totalEI <= 38) level = "Moderate Range";
 else level = "Higher Range";
 
 const interpretation = generateEINarrative(totalEI);
+
+      persistSession();
+      sendToBackend();
 
 render(`
 <h2>Emotional Intelligence Profile</h2>
@@ -596,6 +589,8 @@ else if (totalHappiness <= 20) level = "Moderate Range";
 else level = "Higher Range";
 
 const interpretation = generateHappinessNarrative(totalHappiness);
+    persistSession();
+    sendToBackend();
 
 render(`
 <h2>Subjective Happiness Profile</h2>
@@ -640,6 +635,8 @@ else if (totalStress <= 9) level = "Moderate Stress";
 else level = "Elevated Stress";
 
 const interpretation = generateStressNarrative(totalStress);
+    persistSession();
+    sendToBackend();
 
 render(`
 <h2>Perceived Stress Profile</h2>
@@ -702,6 +699,8 @@ Finish Assessment
    const narrative = generateMotivationNarrative(
     sessionState.results.Motivation
 );
+    persistSession();
+    sendToBackend();
 
     render(`
         <h2>Motivation Profile</h2>
@@ -723,6 +722,76 @@ Finish Assessment
     return;
 }
 
+}
+function showTestResult(testName) {
+
+    const r = sessionState.results;
+
+    if (testName === "Personality" && r.Personality) {
+        renderPersonalityResult(r.Personality);
+        return;
+    }
+
+    if (testName === "Emotional_Intelligence" && r.Emotional_Intelligence) {
+
+        const totalEI = r.Emotional_Intelligence.total;
+        const interpretation = generateEINarrative(totalEI);
+
+        render(`
+        <h2>Emotional Intelligence Profile</h2>
+        <p><strong>Total Score:</strong> ${totalEI} / 50</p>
+        <p>${interpretation}</p>
+        <br>
+        <button onclick="renderDashboard()">Back to Dashboard</button>
+        `);
+        return;
+    }
+
+    if (testName === "Happiness" && r.Happiness) {
+
+        const total = r.Happiness.total;
+        const interpretation = generateHappinessNarrative(total);
+
+        render(`
+        <h2>Happiness Profile</h2>
+        <p><strong>Total Score:</strong> ${total} / 28</p>
+        <p>${interpretation}</p>
+        <br>
+        <button onclick="renderDashboard()">Back to Dashboard</button>
+        `);
+        return;
+    }
+
+    if (testName === "Stress" && r.Stress) {
+
+        const total = r.Stress.total;
+        const interpretation = generateStressNarrative(total);
+
+        render(`
+        <h2>Stress Profile</h2>
+        <p><strong>Total Score:</strong> ${total} / 16</p>
+        <p>${interpretation}</p>
+        <br>
+        <button onclick="renderDashboard()">Back to Dashboard</button>
+        `);
+        return;
+    }
+
+    if (testName === "Motivation" && r.Motivation) {
+
+        const interpretation = generateMotivationNarrative(r.Motivation);
+
+        render(`
+        <h2>Motivation Profile</h2>
+        <p><strong>Intrinsic:</strong> ${r.Motivation.intrinsic}</p>
+        <p><strong>Extrinsic:</strong> ${r.Motivation.extrinsic}</p>
+        <p><strong>Amotivation:</strong> ${r.Motivation.amotivation}</p>
+        <p>${interpretation}</p>
+        <br>
+        <button onclick="renderDashboard()">Back to Dashboard</button>
+        `);
+        return;
+    }
 }
 
 function interpretTrait(score) {
@@ -956,171 +1025,11 @@ resultHTML += `
 resultHTML += `
   <br><br>
   <button onclick="renderDashboard()">Do Another Test</button>
-  <button onclick="renderFinalSummary()" style="margin-left:10px; background:#444;">
-    Finish Assessment
-  </button>
 `;
 
   render(resultHTML);
 }
 
-function renderFinalSummary() {
-
- if (!summarySubmitted) {
-    sendToBackend();
-    summarySubmitted = true;
-}
-
-const r = sessionState.results;
-let supportBlock = "";
-
-// -------- HIGH STRESS --------
-if (r.Stress?.total >= 12) {
-  supportBlock += `
-    <div class="summary-card support-card">
-      <h3>Support Recommendation</h3>
-      <p>Your responses suggest elevated stress levels. It may be helpful to speak with Ms. Neha at the University Counselling Room (Block A, Ground Floor).</p>
-      <a href="https://forms.gle/qPGY49pDKXnqEyfbA" target="_blank" class="primary-btn">
-        Request Counselling Support
-      </a>
-    </div>
-  `;
-}
-
-// -------- LOW HAPPINESS --------
-if (r.Happiness?.total <= 14) {
-  supportBlock += `
-    <div class="summary-card support-card">
-      <h3>Help Improve Campus Wellbeing</h3>
-      <p>If you feel your university experience could be more fulfilling, you may share suggestions with us.</p>
-      <a href="https://forms.gle/HvzwyFR8W2UsGVpEA" target="_blank" class="primary-btn">
-        Share Feedback
-      </a>
-    </div>
-  `;
-}
-
-// -------- HIGH AMOTIVATION --------
-if (r.Motivation?.amotivation > r.Motivation?.intrinsic) {
-  supportBlock += `
-    <div class="summary-card support-card">
-      <h3>Motivational Support</h3>
-      <p>Your responses suggest reduced academic drive. Structured academic mentoring or counselling may help re-align goals.</p>
-    </div>
-  `;
-}
-
-// -------- LOW EI --------
-if (r.Emotional_Intelligence?.total <= 25) {
-  supportBlock += `
-    <div class="summary-card support-card">
-      <h3>Emotional Skill Development</h3>
-      <p>Emotional intelligence is a developable capacity. Workshops and guided reflection sessions can strengthen regulation and empathy skills.</p>
-    </div>
-  `;
-}
-
-const fullNarrative = generateFullNarrative();
-const report = generateStrengthWeaknessReport();
-const academicBlock = generateAcademicFunctioning();
-
-    let html = `
-<h2>Assessment Summary 📊</h2>
-
-<div class="summary-card">
-  <h3>Profile Snapshot</h3>
- ${r.Personality ? `
-  <div>
-    <strong>Personality:</strong><br>
-   Extraversion: ${r.Personality.Extraversion}<br>
-   Agreeableness: ${r.Personality.Agreeableness}<br>
-   Conscientiousness: ${r.Personality.Conscientiousness}<br>
-   Neuroticism: ${r.Personality.Neuroticism}<br>
-   Openness: ${r.Personality.Openness}
-  </div>
-` : ""}
-
-  ${r.Emotional_Intelligence ? `
-    <p><strong>Emotional Intelligence:</strong> ${r.Emotional_Intelligence.total}</p>
-  ` : ""}
-
-  ${r.Happiness ? `
-    <p><strong>Happiness:</strong> ${r.Happiness.total} / 28</p>
-  ` : ""}
-
-  ${r.Stress ? `
-    <p><strong>Stress:</strong> ${r.Stress.total} / 16</p>
-  ` : ""}
-
-  ${r.Motivation ? `
-    <p><strong>Motivation:</strong> Intrinsic ${r.Motivation.intrinsic} | Extrinsic ${r.Motivation.extrinsic} | Amotivation ${r.Motivation.amotivation}</p>
-  ` : ""}
-</div>
-`;
-
-/* =============================
-   Psychological Overview
-============================= */
-
-html += `
-<div class="summary-card">
-  <h3>Your Personal Overview</h3>
-  <p>${fullNarrative}</p>
-</div>
-`;
-
-/* =============================
-   Academic Functioning
-============================= */
-
-html += academicBlock;
-
-/* =============================
-   Strengths
-============================= */
-
-html += `
-<div class="summary-card">
-  <h3>Strength Indicators</h3>
-  <ul>
-  ${report.strengths.length 
-      ? report.strengths.map(s => `<li>${s}</li>`).join("") 
-      : "<li>No prominent strengths identified in assessed domains.</li>"}
-  </ul>
-</div>
-`;
-
-/* =============================
-   Growth Areas
-============================= */
-
-html += `
-<div class="summary-card">
-  <h3>Growth & Development Areas</h3>
-  <ul>
-  ${report.growth.length 
-      ? report.growth.map(g => `<li>${g}</li>`).join("") 
-      : "<li>No major developmental flags detected.</li>"}
-  </ul>
-</div>
-`;
-
-/* =============================
-   Action Buttons
-============================= */
-
-html += `
-<div class="summary-actions">
-  <button onclick="renderDashboard()">Back to Dashboard</button>
-  <button onclick="downloadReport()" style="margin-left:10px;background:#444;">
-    Download Report
-  </button>
-</div>
-`;
-html += supportBlock;
-localStorage.setItem("mindpop_session", JSON.stringify(sessionState));
-    render(html);
-}
 function resetAssessment() {
     sessionState.completedTests = [];
     sessionState.results = {
@@ -1131,46 +1040,6 @@ function resetAssessment() {
         Motivation: null
     };
     renderDashboard();
-}
-function downloadReport() {
-  let report = "MindPop Psychological Assessment Report\n\n";
-
-  if (sessionState.results.Personality) {
-    report += "Personality:\n";
-    for (let trait in sessionState.results.Personality) {
-      report += `${trait}: ${sessionState.results.Personality[trait]}\n`;
-    }
-    report += "\n";
-  }
-
-  if (sessionState.results.Emotional_Intelligence) {
-    report += `Emotional Intelligence Total: ${sessionState.results.Emotional_Intelligence.total}\n\n`;
-  }
-
-  if (sessionState.results.Happiness) {
-    report += `Happiness Total: ${sessionState.results.Happiness.total}\n\n`;
-  }
-
-  if (sessionState.results.Stress) {
-    report += `Stress Total: ${sessionState.results.Stress.total}\n\n`;
-  }
-
-  if (sessionState.results.Motivation) {
-    report += "Motivation:\n";
-    report += `Intrinsic: ${sessionState.results.Motivation.intrinsic}\n`;
-    report += `Extrinsic: ${sessionState.results.Motivation.extrinsic}\n`;
-    report += `Amotivation: ${sessionState.results.Motivation.amotivation}\n\n`;
-  }
-
-  const blob = new Blob([report], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "MindPop_Report.txt";
-  a.click();
-
-  URL.revokeObjectURL(url);
 }
 
 function handlePursuingChange() {
@@ -1186,311 +1055,6 @@ function handlePursuingChange() {
     yearContainer.style.display = "block";
     facultyContainer.style.display = "none";
   }
-}
-function generateFullNarrative() {
-
-    let narrative = "";
-
-    const p = sessionState.results.Personality;
-    const h = sessionState.results.Happiness;
-    const s = sessionState.results.Stress;
-    const ei = sessionState.results.Emotional_Intelligence;
-    const m = sessionState.results.Motivation;
-
-    // ===============================
-    // 1️⃣ Stress + EI Interaction
-    // ===============================
-    if (s && ei) {
-
-        if (s.total >= 10 && ei.total <= 25) {
-            narrative += "You may be experiencing a combination of higher stress and emotional load, which can feel draining during busy periods. With small coping adjustments and support, balance can gradually improve. ";}
-
-        else if (s.total >= 10 && ei.total > 38) {
-            narrative += "Although stress levels appear elevated, your emotional regulation capacity may buffer against prolonged disruption. Structured recovery practices may further stabilize performance. ";
-        }
-    }
-
-    // ===============================
-    // 2️⃣ Stress + Conscientiousness
-    // ===============================
-    if (s && p) {
-
-        if (s.total >= 10 && p.Conscientiousness >= 8) {
-            narrative += "High task commitment alongside elevated stress may reflect overextension. Introducing pacing strategies and boundary-setting could prevent long-term fatigue. ";
-        }
-    }
-
-    // ===============================
-    // 3️⃣ Happiness + Motivation
-    // ===============================
-    if (h && m) {
-
-        if (h.total <= 12 && m.amotivation > m.intrinsic && m.amotivation > m.extrinsic) {
-            narrative += "Lower positive affect combined with reduced motivational activation may indicate temporary disengagement. Reconnecting with supportive environments and meaningful goals may restore momentum. ";
-        }
-    }
-
-    // ===============================
-    // 4️⃣ EI + Motivation
-    // ===============================
-    if (ei && m) {
-
-        if (ei.total > 38 && m.intrinsic > m.extrinsic) {
-            narrative += "Strong emotional awareness paired with intrinsic motivation suggests adaptive self-directed engagement patterns. This combination often supports sustained academic growth. ";
-        }
-    }
-
-    // ===============================
-    // 5️⃣ Openness + Intrinsic Motivation
-    // ===============================
-    if (p && m) {
-
-        if (p.Openness >= 8 && m.intrinsic > m.extrinsic) {
-            narrative += "Curiosity and internally driven motivation may enhance exploratory learning and intellectual flexibility. ";
-        }
-    }
-
-    // ===============================
-    // 6️⃣ Default Balanced Statement
-    // ===============================
-    if (narrative === "") {
-        narrative = "Your responses suggest generally adaptive psychological functioning across assessed domains, with balanced emotional and motivational patterns.";
-    }
-
-    return narrative;
-}
-function generateAcademicFunctioning() {
-
-    const p = sessionState.results.Personality;
-    const h = sessionState.results.Happiness;
-    const s = sessionState.results.Stress;
-    const ei = sessionState.results.Emotional_Intelligence;
-    const m = sessionState.results.Motivation;
-
-    let overview = "";
-    let focusCapacity = "";
-    let effortSustainability = "";
-    let resilienceProfile = "";
-    let recommendation = "";
-
-    // -----------------------------
-    // Focus Capacity
-    // -----------------------------
-    if (s && s.total >= 10) {
-        focusCapacity = "Elevated stress may intermittently affect concentration and mental clarity during demanding periods.";
-    } else {
-        focusCapacity = "Concentration capacity appears generally stable under routine academic demands.";
-    }
-
-    // -----------------------------
-    // Effort Sustainability
-    // -----------------------------
-    if (m) {
-        if (m.amotivation > m.intrinsic && m.amotivation > m.extrinsic) {
-            effortSustainability = "Sustaining academic effort may feel inconsistent at present, particularly when tasks feel disconnected from personal meaning.";
-        }
-        else if (m.intrinsic > m.extrinsic) {
-            effortSustainability = "Internally driven engagement may support deeper and more sustainable learning patterns.";
-        }
-        else {
-            effortSustainability = "Clear structure and accountability systems may enhance effort consistency.";
-        }
-    }
-
-    // -----------------------------
-    // Resilience Profile
-    // -----------------------------
-    if (ei && s) {
-        if (ei.total >= 38 && s.total >= 10) {
-            resilienceProfile = "Despite elevated demands, emotional regulation capacity may buffer against prolonged academic disruption.";
-        }
-        else if (ei.total <= 25 && s.total >= 10) {
-            resilienceProfile = "Academic strain may feel more internally taxing when stress and emotional regulation load combine.";
-        }
-        else {
-            resilienceProfile = "Stress-response and emotional regulation patterns appear within adaptive range.";
-        }
-    }
-
-    // -----------------------------
-    // Overextension Risk
-    // -----------------------------
-    if (p && s) {
-        if (p.Conscientiousness >= 8 && s.total >= 10) {
-            recommendation = "High achievement orientation combined with elevated stress suggests monitoring pacing and workload balance.";
-        }
-    }
-
-    if (!recommendation) {
-        recommendation = "Maintaining structured routines, recovery breaks, and goal clarity may support sustained academic functioning.";
-    }
-
-    // -----------------------------
-    // Final Overview
-    // -----------------------------
-    overview = "Your academic functioning profile reflects the interaction between motivation, emotional regulation, stress load, and task orientation.";
-
-    return `
-        <div class="summary-card">
-            <div class="summary-title">Academic Functioning Overview</div>
-            <div class="summary-text">
-                <p>${overview}</p>
-                <p><strong>Focus Capacity:</strong> ${focusCapacity}</p>
-                <p><strong>Effort Sustainability:</strong> ${effortSustainability}</p>
-                <p><strong>Resilience Pattern:</strong> ${resilienceProfile}</p>
-                <p><strong>Performance Recommendation:</strong> ${recommendation}</p>
-            </div>
-        </div>
-    `;
-}
-
-function generateStrengthWeaknessReport() {
-
-    let strengths = [];
-    let growth = [];
-
-    const p = sessionState.results.Personality;
-    const ei = sessionState.results.Emotional_Intelligence;
-    const h = sessionState.results.Happiness;
-    const s = sessionState.results.Stress;
-    const m = sessionState.results.Motivation;
-
-    // ==============================
-    // Personality Strength Patterns
-    // ==============================
-
-    if (p) {
-
-        if (p.Conscientiousness >= 8) {
-            strengths.push("Strong task discipline and structured goal orientation. This may support consistent academic performance and planning efficiency.");
-        }
-
-        if (p.Agreeableness >= 8) {
-            strengths.push("Cooperative interpersonal style that may enhance teamwork and peer collaboration.");
-        }
-
-        if (p.Openness >= 8) {
-            strengths.push("Intellectual curiosity and openness to new ideas, supporting adaptive learning.");
-        }
-
-        if (p.Neuroticism >= 8) {
-            growth.push("Heightened emotional sensitivity under stress. Developing structured coping routines may enhance resilience during demanding periods.");
-        }
-
-        if (p.Conscientiousness <= 4) {
-            growth.push("Lower task structure orientation. Building consistent planning systems may strengthen follow-through.");
-        }
-    }
-
-    // ==============================
-    // EI Strength / Growth
-    // ==============================
-
-    if (ei) {
-
-        if (ei.total >= 40) {
-            strengths.push("Strong emotional awareness and regulation capacity, which may buffer against academic and interpersonal stress.");
-        }
-
-        if (ei.total <= 25) {
-            growth.push("Emotional regulation skills may benefit from intentional reflection practices and feedback-based learning.");
-        }
-    }
-
-    // ==============================
-    // Stress Pattern
-    // ==============================
-
-    if (s) {
-
-        if (s.total <= 4) {
-            strengths.push("Low perceived stress levels suggest effective coping balance under routine demands.");
-        }
-
-        if (s.total >= 12) {
-            growth.push("You may want to pay attention to stress levels and give yourself space to recharge when needed.");
-        }
-    }
-
-    // ==============================
-    // Happiness Pattern
-    // ==============================
-
-    if (h) {
-
-        if (h.total >= 22) {
-            strengths.push("Positive emotional baseline that may enhance creativity, persistence, and social engagement.");
-        }
-
-        if (h.total <= 12) {
-            growth.push("Reduced subjective wellbeing at present. Increasing meaningful engagement and restorative activities may support uplift.");
-        }
-    }
-
-    // ==============================
-    // Motivation Pattern
-    // ==============================
-
-    if (m) {
-
-        if (m.intrinsic > m.extrinsic && m.intrinsic > m.amotivation) {
-            strengths.push("Internally driven motivation, supporting sustained and self-directed learning.");
-        }
-
-        if (m.extrinsic > m.intrinsic && m.extrinsic > m.amotivation) {
-            strengths.push("Responsiveness to structure and accountability, which may enhance performance in organized environments.");
-        }
-
-        if (m.amotivation > m.intrinsic && m.amotivation > m.extrinsic) {
-            growth.push("You might benefit from reconnecting with what personally matters to you, especially if things feel routine or draining.");
-        }
-    }
-
-    // ==============================
-    // Cross-Scale Interaction Logic
-    // ==============================
-
-    // High Stress + High Conscientiousness
-    if (s && p) {
-        if (s.total >= 10 && p.Conscientiousness >= 8) {
-            growth.push("Strong achievement drive combined with elevated stress may indicate overextension. Introducing pacing strategies could prevent fatigue.");
-        }
-    }
-
-    // High EI + High Stress
-    if (s && ei) {
-        if (s.total >= 10 && ei.total >= 38) {
-            strengths.push("Despite elevated stress, emotional regulation capacity may provide resilience and adaptive recovery potential.");
-        }
-    }
-
-    // Low Happiness + High Amotivation
-    if (h && m) {
-        if (h.total <= 12 && m.amotivation > m.intrinsic) {
-            growth.push("Lower positive affect combined with reduced motivational activation may reflect temporary disengagement. Structured support may restore direction.");
-        }
-    }
-
-    // Balanced Protective Pattern
-    if (ei && h && s) {
-        if (ei.total >= 38 && h.total >= 20 && s.total <= 9) {
-            strengths.push("Balanced emotional regulation, positive affect, and manageable stress suggest strong adaptive functioning.");
-        }
-    }
-
-    // ==============================
-    // Fallback Safety
-    // ==============================
-
-    if (strengths.length === 0) {
-        strengths.push("Your profile reflects balanced psychological functioning without pronounced vulnerabilities.");
-    }
-
-    if (growth.length === 0) {
-        growth.push("No significant development flags identified. Continued self-reflection may support ongoing growth.");
-    }
-
-    return { strengths, growth };
 }
 
 function generatePersonalityNarrative(traits) {
@@ -1717,19 +1281,18 @@ function restartAssessment() {
 }
 
 function sendToBackend() {
-  const endpoint = WEB_APP_URL;
-  fetch(endpoint, {
+
+  fetch(WEB_APP_URL, {
     method: "POST",
-    mode: "no-cors",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify(sessionState)
   })
-  .then(() => console.log("Data sent"))
+  .then(res => res.text())
+  .then(data => console.log("Backend:", data))
   .catch(err => console.error("Backend error:", err));
 }
-
 // ---------------- START ----------------
 
 if (sessionState.completedTests.length > 0) {

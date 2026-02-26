@@ -1373,14 +1373,15 @@ function sendToBackend() {
 
   fetch(WEB_APP_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    mode: "no-cors",
     body: JSON.stringify(sessionState)
   })
-  .then(res => res.text())
-  .then(data => console.log("Backend:", data))
-  .catch(err => console.error("Backend error:", err));
+  .then(() => {
+    console.log("Data sent to backend (no-cors mode)");
+  })
+  .catch(err => {
+    console.error("Backend error:", err);
+  });
 }
 // ---------------- START ----------------
 

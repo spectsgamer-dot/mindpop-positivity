@@ -784,19 +784,33 @@ function showTestResult(testName) {
 
     if (testName === "Motivation" && r.Motivation) {
 
-        const interpretation = generateMotivationNarrative(r.Motivation);
+    const intrinsic = r.Motivation.intrinsic;
+    const extrinsic = r.Motivation.extrinsic;
+    const amotivation = r.Motivation.amotivation;
 
-        render(`
+    const narrative = generateMotivationNarrative(r.Motivation);
+
+    render(`
         <h2>Motivation Profile</h2>
-        <p><strong>Intrinsic:</strong> ${r.Motivation.intrinsic}</p>
-        <p><strong>Extrinsic:</strong> ${r.Motivation.extrinsic}</p>
-        <p><strong>Amotivation:</strong> ${r.Motivation.amotivation}</p>
-        <p>${interpretation}</p>
+
+        <h3>Intrinsic Motivation: ${intrinsic}</h3>
+        <p>${interpretIntrinsic(intrinsic)}</p>
+
+        <h3>Extrinsic Motivation: ${extrinsic}</h3>
+        <p>${interpretExtrinsic(extrinsic)}</p>
+
+        <h3>Amotivation: ${amotivation}</h3>
+        <p>${interpretAmotivation(amotivation)}</p>
+
         <br>
+        <p>${narrative}</p>
+
+        <br><br>
         <button onclick="renderDashboard()">Back to Dashboard</button>
-        `);
-        return;
-    }
+    `);
+
+    return;
+}
 }
 
 function interpretTrait(score) {

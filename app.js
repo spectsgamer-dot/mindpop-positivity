@@ -165,13 +165,17 @@ function renderConsent() {
     <h2>😊 Welcome to MindPop</h2>
     <h4> Consent & Participation Notice</h4>
 
-    <p>
-      This assessment is designed for educational and self-reflection purposes within the university setting. Participation is voluntary and anonymous.
-    </p>
+<p>
+This assessment is designed for educational and wellbeing purposes within the university setting. Participation is voluntary.
+</p>
 
-    <p>
-     Your responses may be used in aggregated form to support university-level psychological insights and wellbeing initiatives. Individual results are not diagnostic and do not replace professional mental health consultation.
-    </p>
+<p>
+Basic contact information (such as phone number) is collected for follow-up support if required. Your responses will remain confidential and used only for institutional wellbeing initiatives.
+</p>
+
+<p>
+This assessment is not a diagnostic tool and does not replace professional mental health consultation.
+</p>
 
     <p>
       By proceeding, you confirm that you understand the purpose of this assessment and consent to participate.
@@ -224,6 +228,11 @@ render(`
     <label>Name (Optional)</label>
     <input type="text" id="name">
   </div>
+<div class="form-group">
+  <label>Phone Number (Required)</label>
+  <input type="tel" id="phone" placeholder="Enter 10-digit number">
+</div>
+<input type="text" id="name">
 
   <div class="form-group">
     <label>Gender</label>
@@ -300,6 +309,15 @@ function saveDemographics() {
   const department = document.getElementById("department").value;
   const pursuing = document.getElementById("pursuing").value;
   const year = document.getElementById("year").value;
+  const phone = document.getElementById("phone").value.trim();
+
+// Indian 10-digit validation
+const phoneRegex = /^[6-9]\d{9}$/;
+
+if (!phoneRegex.test(phone)) {
+    alert("Please enter a valid 10-digit phone number.");
+    return;
+}
 
   if (!gender || !department || !pursuing) {
     alert("Please complete all required fields.");
@@ -313,12 +331,14 @@ if (pursuing !== "Faculty" && !year) {
 
   sessionState.demographics = {
   name: document.getElementById("name").value,
+  phone: phone,
   gender: document.getElementById("gender").value,
-  department: document.getElementById("department").value, // ✅ ADD THIS
+  department: document.getElementById("department").value,
   pursuing: document.getElementById("pursuing").value,
   facultyExperience: document.getElementById("facultyExperience")?.value || "",
   year: document.getElementById("year").value
 };
+  sessionState.anonId = phone + "_" + Date.now();
  persistSession();
 
   renderDashboard();
@@ -757,51 +777,162 @@ function renderPersonalityResult(traits) {
 
    if (trait === "Neuroticism") {
     if (level === "High") {
-        interpretation = "You may experience emotions more intensely than some people, especially during stressful moments. With awareness and coping strategies, this sensitivity can become a strength.";
-    } else if (level === "Low") {
-        interpretation = "You tend to stay calm and steady even when situations become demanding.";
-    } else {
-        interpretation = "You experience emotions in a balanced and typical way.";
+        interpretation = `
+        You may experience emotions more intensely than some people, particularly during stressful or uncertain situations.
+
+        This sensitivity can sometimes feel overwhelming, but it can also make you deeply aware of your internal world and the emotional atmosphere around you.
+
+        Developing grounding strategies, emotional awareness practices, or stress management routines can help you channel this sensitivity into emotional strength rather than strain.
+        `;
+    }
+
+    else if (level === "Low") {
+        interpretation = `
+        You generally appear steady and calm, even when challenges arise.
+
+        You may recover relatively quickly from stress and not dwell excessively on setbacks.
+
+        This emotional stability can provide a strong foundation for leadership, teamwork, and long-term goals.
+        `;
+    }
+
+    else {
+        interpretation = `
+        You likely experience emotional ups and downs within a typical range.
+
+        Stress may affect you at times, but it doesn’t appear to dominate your overall functioning.
+
+        Maintaining healthy coping habits will help preserve this balance.
+        `;
     }
 }
 
     if (trait === "Extraversion") {
     if (level === "High") {
-        interpretation = "You likely gain energy from social interaction and enjoy engaging with others.";
-    } else if (level === "Low") {
-        interpretation = "You may recharge best through solitude and quieter activities.";
-    } else {
-        interpretation = "You balance social engagement with personal space.";
+        interpretation = `
+        You likely feel energized when interacting with people and may naturally gravitate toward active, engaging environments. Being around others might stimulate your thinking, creativity, and motivation.
+
+        You may enjoy teamwork, discussions, leadership roles, or situations where ideas are exchanged openly. Social interaction may not drain you — instead, it may recharge you.
+
+        At times, you might need to consciously slow down and create space for reflection, especially when decisions require deeper thought. Balancing action with pause can make this strength even more powerful.
+        `;
+    }
+
+    else if (level === "Low") {
+        interpretation = `
+        You may prefer quieter environments and meaningful one-to-one interactions rather than large group settings. Solitude might not feel lonely — it may feel productive or peaceful.
+
+        You likely think deeply before speaking and may process ideas internally before sharing them. This can lead to thoughtful insights and careful decision-making.
+
+        In highly social or fast-paced environments, you might need recovery time afterward. Protecting that recharge space helps you stay balanced and effective.
+        `;
+    }
+
+    else {
+        interpretation = `
+        You seem comfortable balancing social interaction with personal space. You can engage when needed, yet you also value moments of reflection.
+
+        This flexibility allows you to adapt across different environments — from teamwork settings to independent work.
+
+        Paying attention to when you feel energized versus drained can help you structure your time in a way that supports your natural rhythm.
+        `;
     }
 }
-
     if (trait === "Conscientiousness") {
-    if (level === "Low") {
-        interpretation = "You may prefer flexibility and spontaneity over strict structure.";
-    } else if (level === "High") {
-        interpretation = "You likely value planning, responsibility, and follow-through.";
-    } else {
-        interpretation = "You show a healthy balance between structure and adaptability.";
+
+    if (level === "High") {
+        interpretation = `
+        You likely take responsibilities seriously and may prefer planning ahead rather than working impulsively.
+
+        Structure, organization, and goal-setting may feel natural to you. You might gain satisfaction from completing tasks properly and on time.
+
+        Sometimes, this strong sense of responsibility can lead to overworking or putting pressure on yourself. Remember that rest and flexibility are also productive.
+        `;
+    }
+
+    else if (level === "Low") {
+        interpretation = `
+        You may prefer flexibility over strict routines and might work best when given creative freedom.
+
+        Deadlines or rigid systems may sometimes feel restrictive rather than motivating.
+
+        Creating light structure — without over-restricting yourself — can help maintain consistency while preserving your natural adaptability.
+        `;
+    }
+
+    else {
+        interpretation = `
+        You likely manage your responsibilities reasonably well while remaining adaptable when plans change.
+
+        You may not be overly rigid, but you also understand the value of preparation and follow-through.
+
+        Strengthening small planning habits can make your natural balance even more effective.
+        `;
     }
 }
 
     if (trait === "Agreeableness") {
     if (level === "High") {
-        interpretation = "You likely value cooperation and understanding in relationships.";
-    } else if (level === "Low") {
-        interpretation = "You may prioritize directness and independent thinking.";
-    } else {
-        interpretation = "You balance empathy with assertiveness.";
+        interpretation = `
+        You likely value harmony and try to understand others’ perspectives before reacting. Empathy may come naturally to you.
+
+        In group settings, you might be the person who helps reduce tension or encourages cooperation. People may find you approachable and supportive.
+
+        At times, you may need to ensure your own needs and opinions are expressed clearly, especially if you tend to prioritize others first. Healthy boundaries strengthen, not weaken, kindness.
+        `;
+    }
+
+    else if (level === "Low") {
+        interpretation = `
+        You may prioritize honesty, independence, and logical reasoning over simply maintaining harmony. You might feel comfortable expressing disagreement when necessary.
+
+        Others may see you as direct, clear, or strong-minded. This can be a powerful strength in decision-making and leadership.
+
+        Being mindful of tone and emotional context can help your ideas land effectively without being misunderstood.
+        `;
+    }
+
+    else {
+        interpretation = `
+        You appear to balance empathy with assertiveness. You can cooperate with others while still expressing your own viewpoints.
+
+        In conflicts, you may try to see both sides rather than immediately taking a rigid stance.
+
+        This balance can support both healthy relationships and confident decision-making.
+        `;
     }
 }
 
     if (trait === "Openness") {
+
     if (level === "High") {
-        interpretation = "You are likely imaginative and open to exploring new ideas.";
-    } else if (level === "Low") {
-        interpretation = "You may prefer practical, realistic approaches and familiar routines.";
-    } else {
-        interpretation = "You combine curiosity with grounded thinking.";
+        interpretation = `
+        You seem naturally curious and open to exploring new ideas, perspectives, and experiences.
+
+        You may enjoy creativity, imagination, and thinking beyond conventional boundaries.
+
+        This openness can support innovation and adaptability, especially in changing academic or professional environments.
+        `;
+    }
+
+    else if (level === "Low") {
+        interpretation = `
+        You may prefer practical approaches and familiar routines over constant experimentation.
+
+        Stability and clarity may feel more comfortable than abstract or unpredictable situations.
+
+        This grounded approach can help you stay realistic and focused when others become distracted by too many possibilities.
+        `;
+    }
+
+    else {
+        interpretation = `
+        You likely appreciate new experiences while also valuing structure and practicality.
+
+        You may explore ideas thoughtfully rather than impulsively.
+
+        This balance allows both creativity and grounded decision-making.
+        `;
     }
 }
 
@@ -937,7 +1068,6 @@ html += `
   <p>${fullNarrative}</p>
 </div>
 `;
-  narrative = "Here’s a gentle overview of how your responses come together: ";
 
 /* =============================
    Academic Functioning
@@ -1587,8 +1717,7 @@ function restartAssessment() {
 }
 
 function sendToBackend() {
-  const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
-
+  const endpoint = WEB_APP_URL;
   fetch(endpoint, {
     method: "POST",
     mode: "no-cors",
@@ -1599,13 +1728,6 @@ function sendToBackend() {
   })
   .then(() => console.log("Data sent"))
   .catch(err => console.error("Backend error:", err));
-}
-function fetchData() {
-  const endpoint = "https://script.google.com/macros/s/AKfycbxAf9J8x33TAGFVjLgzKe8vgb0SseC95TnGzSq4ZI22pdB7kO0g_oVhKQpwyzta2rjY/exec";
-
-  fetch(endpoint)
-    .then(res => res.json())
-    .then(data => console.log(data));
 }
 
 // ---------------- START ----------------

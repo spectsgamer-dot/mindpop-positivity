@@ -729,7 +729,6 @@ ${interpretation}
     return;
 }
 
-}
 function showTestResult(testName) {
 
     const r = sessionState.results;

@@ -256,6 +256,7 @@ render(`
       <option value="Physiotherapy & Rehabilitation">Physiotherapy & Rehabilitation</option>
       <option value="Commerce & Management">Commerce & Management</option>
       <option value="Agriculture Sciences & Technology">Agriculture Sciences & Technology</option>
+      <option value="Non Teaching Staff">Non-Teaching Staff</option>
     </select>
   </div>
 
@@ -277,7 +278,6 @@ render(`
       <option>2nd Year</option>
       <option>3rd Year</option>
       <option>4th Year</option>
-      <option>5th Year</option>
     </select>
   </div>
 
@@ -667,9 +667,11 @@ ${interpretation}
     // Assume responses array length = 12
     // 1–5 Likert scale
 
-    const intrinsic = responses[0] + responses[1] + responses[2] + responses[3];
-    const extrinsic = responses[4] + responses[5] + responses[6] + responses[7];
-    const amotivation = responses[8] + responses[9] + responses[10] + responses[11];
+    const intrinsic = responses[0] + responses[5] + responses[6];
+    const identified = responses[1] + responses[10];
+    const introjected = responses[2] + responses[7];
+    const external = responses[3] + responses[8];
+    const amotivation = responses[4] + responses[9] + responses[11];
 
     // 🔹 Store results
     if (!sessionState.completedTests.includes("Motivation")) {
@@ -677,10 +679,13 @@ ${interpretation}
     }
 
     sessionState.results.Motivation = {
-   raw: responses,
-   intrinsic,
-   extrinsic,
-   amotivation
+    raw: responses,
+    intrinsic,
+    identified,
+    introjected,
+    external,
+    amotivation
+};
 
     };
 
@@ -692,7 +697,6 @@ ${interpretation}
     }
 
     const intrinsicLevel = classifyMotivation(intrinsic);
-    const extrinsicLevel = classifyMotivation(extrinsic);
     const amotivationLevel = classifyMotivation(amotivation);
 
     // 🔹 Clinical Narrative
@@ -711,8 +715,6 @@ ${interpretation}
   <h3>Intrinsic Motivation: ${intrinsic}</h3>
   <p>${interpretIntrinsic(intrinsic)}</p>
 
-  <h3>Extrinsic Motivation: ${extrinsic}</h3>
-  <p>${interpretExtrinsic(extrinsic)}</p>
 
   <h3>Amotivation: ${amotivation}</h3>
   <p>${interpretAmotivation(amotivation)}</p>
@@ -785,7 +787,6 @@ function showTestResult(testName) {
     if (testName === "Motivation" && r.Motivation) {
 
     const intrinsic = r.Motivation.intrinsic;
-    const extrinsic = r.Motivation.extrinsic;
     const amotivation = r.Motivation.amotivation;
 
     const narrative = generateMotivationNarrative(r.Motivation);
@@ -795,9 +796,6 @@ function showTestResult(testName) {
 
         <h3>Intrinsic Motivation: ${intrinsic}</h3>
         <p>${interpretIntrinsic(intrinsic)}</p>
-
-        <h3>Extrinsic Motivation: ${extrinsic}</h3>
-        <p>${interpretExtrinsic(extrinsic)}</p>
 
         <h3>Amotivation: ${amotivation}</h3>
         <p>${interpretAmotivation(amotivation)}</p>
@@ -842,12 +840,28 @@ function getShortInsight(testName, data) {
         return "Your responses suggest adaptive emotional processing skills.";
     }
 
-    if (testName === "Motivation") {
-        if (data.amotivation > data.intrinsic && data.amotivation > data.extrinsic) {
-            return "Current motivational energy appears reduced. Reconnecting with personal meaning may be useful.";
-        }
-        return "Your motivation profile suggests engagement with goals.";
+   if (testName === "Motivation") {
+
+    const { intrinsic, identified, introjected, external, amotivation } = data;
+
+    if (amotivation >= intrinsic && amotivation >= identified) {
+        return "Current motivation appears reduced or unclear. Reconnecting with meaningful goals may help.";
     }
+
+    if (intrinsic >= identified && intrinsic >= external) {
+        return "Your motivation is largely interest-driven and internally sustained.";
+    }
+
+    if (identified >= intrinsic) {
+        return "You are motivated by personal goals and values.";
+    }
+
+    if (external >= intrinsic) {
+        return "External structure and expectations play an important role in your motivation.";
+    }
+
+    return "Your motivation appears mixed and context-dependent.";
+}
 
     return "";
 }
@@ -1248,47 +1262,67 @@ function generateStressNarrative(totalStress) {
 }
 function generateMotivationNarrative(data) {
 
-    const { intrinsic, extrinsic, amotivation } = data;
+    const { intrinsic, identified, introjected, external, amotivation } = data;
+
     let message = "";
 
-    if (amotivation > intrinsic && amotivation > extrinsic) {
+    // 🔻 Amotivation dominant
+    if (amotivation >= intrinsic && amotivation >= identified) {
 
         message = `
-        <p>You might be feeling a bit disconnected from your work right now.</p>
+        <p>You might be feeling somewhat disconnected from your work at the moment.</p>
 
-        <p>It may sometimes feel hard to start tasks or stay consistent, especially if the work doesn’t feel meaningful.</p>
+        <p>It may not always feel clear why certain tasks matter, which can reduce energy and consistency.</p>
 
-        <p>This phase can happen to anyone. Reconnecting with why you started, setting small achievable goals, or talking to a mentor can help rebuild momentum.</p>
+        <p>Revisiting your goals, breaking tasks into smaller steps, or reconnecting with purpose may help rebuild direction.</p>
         `;
+    }
 
-    } else if (intrinsic > extrinsic && intrinsic > amotivation) {
+    // 🔻 Intrinsic dominant
+    else if (intrinsic >= identified && intrinsic >= external) {
 
         message = `
-        <p>You seem to be motivated mainly by genuine interest and personal meaning.</p>
+        <p>Your motivation seems to come largely from genuine interest and enjoyment.</p>
 
-        <p>When something feels valuable or interesting to you, you likely put in strong effort naturally.</p>
+        <p>When something feels engaging or meaningful, you are likely to invest effort naturally.</p>
 
-        <p>Keeping your goals aligned with your interests will help you stay energized long-term.</p>
+        <p>This pattern is often linked with deeper learning and long-term consistency.</p>
         `;
+    }
 
-    } else if (extrinsic > intrinsic && extrinsic > amotivation) {
+    // 🔻 Identified dominant
+    else if (identified >= intrinsic) {
 
         message = `
-        <p>You appear to respond well to structure, deadlines, and clear expectations.</p>
+        <p>You appear to be guided by personal goals and values.</p>
 
-        <p>External goals, recognition, or accountability may help you stay focused and productive.</p>
+        <p>Even when tasks are not enjoyable, you likely see their importance and stay committed.</p>
 
-        <p>Blending this structure with personal meaning could make your motivation even stronger.</p>
+        <p>This reflects a strong sense of direction and internal alignment.</p>
         `;
+    }
 
-    } else {
+    // 🔻 External dominant
+    else if (external >= intrinsic) {
 
         message = `
-        <p>Your motivation seems fairly balanced between personal interest and external structure.</p>
+        <p>Your motivation seems influenced by structure, expectations, or external outcomes.</p>
 
-        <p>You likely adapt your effort depending on the situation.</p>
+        <p>Deadlines, rewards, or accountability may help you stay on track.</p>
 
-        <p>Periodic reflection on your goals can help maintain clarity and direction.</p>
+        <p>Balancing this with personal meaning could strengthen long-term engagement.</p>
+        `;
+    }
+
+    // 🔻 Mixed profile
+    else {
+
+        message = `
+        <p>Your motivation appears to be mixed and situation-dependent.</p>
+
+        <p>You may shift between personal interest, goals, and external demands depending on the context.</p>
+
+        <p>Regular reflection can help maintain clarity and consistency.</p>
         `;
     }
 
@@ -1318,29 +1352,7 @@ function interpretIntrinsic(score) {
   Reflecting on what personally matters to you can help maintain clarity.
   `;
 }
-function interpretExtrinsic(score) {
 
-  if (score >= 8) {
-    return `
-    External goals, recognition, deadlines, or expectations may strongly influence your effort.
-    Clear structure and accountability likely help you stay focused and productive.
-    Combining this with personal meaning can make your motivation even stronger.
-    `;
-  }
-
-  if (score <= 4) {
-    return `
-    External rewards or pressures may not strongly influence your motivation.
-    You might rely more on personal interest than external validation.
-    In structured environments, setting clear goals may help maintain direction.
-    `;
-  }
-
-  return `
-  You seem to respond moderately to external expectations and structure.
-  Depending on the situation, deadlines or rewards may support your effort.
-  `;
-}
 function interpretAmotivation(score) {
 
   if (score >= 8) {

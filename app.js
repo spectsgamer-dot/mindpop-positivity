@@ -1,4 +1,4 @@
-const WEB_APP_URL = "notforyou";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwtD3CzKvIpJvgjnpL4C3mJnOjgekySWh8t0Cq1na2QG_jb6MXpWNxkPHCGmy5BhDot3Q/exec";
 
 // ---------------- SESSION ----------------
 
@@ -149,10 +149,50 @@ function generateAnonId() {
   return `${timestamp}-${random}`;
 }
 
+// ================== UTILITY FUNCTIONS ==================
+
+function createNarrativeSection(title, icon, content) {
+  return `
+    <div class="summary-card">
+      <h3 class="summary-title">${icon} ${title}</h3>
+      <p class="summary-text">${content}</p>
+    </div>
+  `;
+}
+
+function createTestButton(testName, label, isCompleted = false) {
+  const completedClass = isCompleted ? 'completed' : '';
+  const completedIcon = isCompleted ? '✓ ' : '';
+  return `
+    <button onclick="startTest('${testName}')" class="test-button ${completedClass}">
+      ${completedIcon}${label}
+    </button>
+  `;
+}
+
+function formatProfileHeader(title, subtitle = '') {
+  return `
+    <div style="text-align: center; margin-bottom: 30px;">
+      <h2>${title}</h2>
+      ${subtitle ? `<p style="color: #666; font-style: italic;">${subtitle}</p>` : ''}
+    </div>
+  `;
+}
+
+function createBackButton(label = "Back to Dashboard") {
+  return `<button onclick="renderDashboard()">${label}</button>`;
+}
+
+// ================== CORE FUNCTIONS ==================
+
 function render(content) {
   document.getElementById("app").innerHTML = `
     <div class="card">${content}</div>
   `;
+  // Auto-scroll to top after content change with slight delay
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 100);
 }
 function persistSession() {
   localStorage.setItem("mindpop_session", JSON.stringify(sessionState));
@@ -160,33 +200,37 @@ function persistSession() {
 // ---------------- CONSENT ----------------
 
 function renderConsent() {
-  render(`
-    <h2>😊 Welcome to MindPop</h2>
-    <h4> Consent & Participation Notice</h4>
+  const header = formatProfileHeader(
+    "Welcome to MindPop", 
+    "Before We Begin"
+  );
+  
+  const content = `
+    <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+      <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 25px;">
+        This check-in is designed to help you reflect on your wellbeing and patterns in a simple, supportive way.
+      </p>
+      
+      <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 25px;">
+        Your participation is voluntary. Your responses are kept confidential and used only for institutional wellbeing support.
+      </p>
+      
+      <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 35px;">
+        This is not a diagnosis, and it does not replace professional care.
+      </p>
+      
+      <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 35px;">
+        Please share your name and consent to continue.
+      </p>
 
-<p>
-This assessment is designed for educational and wellbeing purposes within the university setting. Participation is voluntary.
-</p>
-
-<p>
-Basic contact information (such as phone number) is collected for follow-up support if required. Your responses will remain confidential and used only for institutional wellbeing initiatives.
-</p>
-
-<p>
-This assessment is not a diagnostic tool and does not replace professional mental health consultation.
-</p>
-
-    <p>
-      By proceeding, you confirm that you understand the purpose of this assessment and consent to participate.
-    </p>
-
-    <div style="margin-top:20px;">
-      <button onclick="acceptConsent()">I Agree</button>
-      <button onclick="refuseConsent()" style="background:#ccc; color:black; margin-left:10px;">
-        I Do Not Agree
-      </button>
+      <div style="text-align: center; margin-top: 30px;">
+        <button onclick="acceptConsent()" class="test-button" style="margin-right: 10px;">I Agree</button>
+        <button onclick="refuseConsent()" class="secondary">I Don't Agree</button>
+      </div>
     </div>
-  `);
+  `;
+  
+  render(header + content);
 }
 
 function acceptConsent() {
@@ -195,23 +239,35 @@ function acceptConsent() {
   renderDemographics();
 }
 function refuseConsent() {
-  render(`
-    <h2>😔 Consent Required</h2>
+  const header = formatProfileHeader("🌸 Take Your Time", "Your Journey Begins When You're Ready");
+  
+  const content = `
+    <div style="max-width: 500px; margin: 0 auto; text-align: center;">
+      ${createNarrativeSection(
+        "Understanding Your Pace", 
+        "", 
+        `We understand that starting a journey of self-discovery is a personal choice, and timing matters. There's no rush — your wellbeing journey unfolds at its own perfect rhythm.`
+      )}
+      
+      ${createNarrativeSection(
+        "Always Here for You", 
+        "", 
+        `When you feel ready, this assessment will be here to support your exploration of wellbeing and growth. Consider this an open invitation, not an obligation.`
+      )}
+      
+      <p style="font-style: italic; color: #666; margin-top: 20px;">
+        "The journey of a thousand miles begins with a single step." 
+        Your step comes when you choose to take it.
+      </p>
 
-    <p>
-      Participation requires informed consent.
-    </p>
-
-    <p>
-      If you wish to contribute to understanding student wellbeing,
-      you may choose to provide consent.
-    </p>
-
-    <button onclick="renderConsent()">Go Back</button>
-    <button onclick="acceptConsent()" style="margin-left:10px;">
-      Give Consent
-    </button>
-  `);
+      <div style="margin-top: 30px; display: flex; justify-content: center; gap: 15px;">
+        <button onclick="renderConsent()" class="secondary">Reconsider</button>
+        <button onclick="acceptConsent()" class="test-button">I'm Ready</button>
+      </div>
+    </div>
+  `;
+  
+  render(header + content);
 }
 
 // ---------------- DEMOGRAPHICS ----------------
@@ -345,51 +401,58 @@ if (pursuing !== "Faculty" && !year) {
 // ---------------- DASHBOARD ----------------
 
 function renderDashboard() {
-
     const completed = sessionState.completedTests.length;
+    const total = 5;
 
-    function testButton(name) {
-
-    const isDone = sessionState.completedTests.includes(name);
-
-    return `
-        <button 
-            onclick="${
-                isDone 
-                ? `showTestResult('${name}')` 
-                : `startTest('${name}')`
-            }"
-            style="margin:5px;"
-        >
-            ${name.replace("_", " ")} ${isDone ? "✓" : ""}
-        </button>
-    `;
-}
-
-    // 🔥 THIS MUST BE OUTSIDE TEMPLATE
-    let restartButton = "";
-    if (completed === 5) {
-        restartButton = `
-            <br><br>
-            <button onclick="restartAssessment()" style="background:#444;">
-                Start New Assessment
-            </button>
+    function createTestItem(testName, displayName, icon) {
+        const isDone = sessionState.completedTests.includes(testName);
+        const action = isDone ? `showTestResult('${testName}')` : `startTest('${testName}')`;
+        const buttonLabel = isDone ? 'View Results' : 'Start Test';
+        
+        return `
+            <div class="summary-card" style="cursor: pointer; display: flex; align-items: center; padding: 20px; gap: 20px;" onclick="${action}">
+                <div style="font-size: 2.5rem; flex-shrink: 0;">${icon}</div>
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 5px 0; color: ${isDone ? '#28a745' : '#333'}; font-size: 1.1rem;">
+                        ${displayName} ${isDone ? '✓' : ''}
+                    </h4>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                        ${isDone ? 'Completed - Click to view results' : 'Not started - Click to begin'}
+                    </p>
+                </div>
+                <button class="${isDone ? 'secondary' : 'test-button'}" style="flex-shrink: 0; min-width: 120px;">
+                    ${buttonLabel}
+                </button>
+            </div>
         `;
     }
 
-    render(`
-        <h2>Assessment Dashboard</h2>
-        <p>Completed Tests: ${completed}/5</p>
+    const header = formatProfileHeader(
+        "MindPop Assessment", 
+        "Choose an assessment to begin"
+    );
 
-        ${testButton("Personality")}
-        ${testButton("Emotional_Intelligence")}
-        ${testButton("Happiness")}
-        ${testButton("Stress")}
-        ${testButton("Motivation")}
+    const content = `
+        <div style="display: flex; flex-direction: column; gap: 15px; margin: 30px 0;">
+            ${createTestItem("Personality", "Personality Profile", "🎭")}
+            ${createTestItem("Emotional_Intelligence", "Emotional Intelligence", "💝")}
+            ${createTestItem("Happiness", "Happiness Scale", "😊")}
+            ${createTestItem("Stress", "Stress Assessment", "🌊")}
+            ${createTestItem("Motivation", "Motivation Profile", "🔥")}
+        </div>
 
-        <br><br>
-        ${restartButton}
-    `);
+        ${completed === total ? `
+            <div style="text-align: center; margin-top: 40px; padding: 25px; background: #f8f9fa; border-radius: 10px;">
+                <h4 style="color: #28a745; margin-bottom: 15px;">🎉 All Complete!</h4>
+                <p style="margin: 0;">You've completed all assessments.</p>
+                <button onclick="restartAssessment()" style="margin-top: 20px;" class="secondary">
+                    Start New Assessment
+                </button>
+            </div>
+        ` : ''}
+    `;
+
+    render(header + content);
 }
 
 // ---------------- TEST ENGINE ----------------
@@ -552,9 +615,6 @@ const interpretation = generateEINarrative(totalEI);
 render(`
 <h2>Emotional Intelligence Profile</h2>
 
-<p><strong>Total Score:</strong> ${totalEI} / 50</p>
-<p><strong>Level:</strong> ${level}</p>
-
 <p style="margin-top:10px;">
 ${interpretation}
 </p>
@@ -597,9 +657,6 @@ const interpretation = generateHappinessNarrative(totalHappiness);
 
 render(`
 <h2>Subjective Happiness Profile</h2>
-
-<p><strong>Total Score:</strong> ${totalHappiness} / 28</p>
-<p><strong>Level:</strong> ${level}</p>
 
 <p style="margin-top:10px;">
 ${interpretation}
@@ -644,9 +701,6 @@ const interpretation = generateStressNarrative(totalStress);
 render(`
 <h2>Perceived Stress Profile</h2>
 
-<p><strong>Total Score:</strong> ${totalStress} / 16</p>
-<p><strong>Level:</strong> ${level}</p>
-
 <p style="margin-top:10px;">
 ${interpretation}
 </p>
@@ -687,8 +741,6 @@ ${interpretation}
     amotivation
 };
 
-    };
-
     // 🔹 Level Classification
     function classifyMotivation(score) {
         if (score <= 8) return "Low";
@@ -712,11 +764,10 @@ ${interpretation}
    render(`
   <h2>Motivation Profile</h2>
 
-  <h3>Intrinsic Motivation: ${intrinsic}</h3>
+  <h3>Intrinsic Motivation</h3>
   <p>${interpretIntrinsic(intrinsic)}</p>
 
-
-  <h3>Amotivation: ${amotivation}</h3>
+  <h3>Amotivation</h3>
   <p>${interpretAmotivation(amotivation)}</p>
 
   <br>
@@ -727,6 +778,7 @@ ${interpretation}
 `);
 
     return;
+}
 }
 
 function showTestResult(testName) {
@@ -745,7 +797,6 @@ function showTestResult(testName) {
 
         render(`
         <h2>Emotional Intelligence Profile</h2>
-        <p><strong>Total Score:</strong> ${totalEI} / 50</p>
         <p>${interpretation}</p>
         <br>
         <button onclick="renderDashboard()">Back to Dashboard</button>
@@ -760,7 +811,6 @@ function showTestResult(testName) {
 
         render(`
         <h2>Happiness Profile</h2>
-        <p><strong>Total Score:</strong> ${total} / 28</p>
         <p>${interpretation}</p>
         <br>
         <button onclick="renderDashboard()">Back to Dashboard</button>
@@ -775,7 +825,6 @@ function showTestResult(testName) {
 
         render(`
         <h2>Stress Profile</h2>
-        <p><strong>Total Score:</strong> ${total} / 16</p>
         <p>${interpretation}</p>
         <br>
         <button onclick="renderDashboard()">Back to Dashboard</button>
@@ -793,10 +842,10 @@ function showTestResult(testName) {
     render(`
         <h2>Motivation Profile</h2>
 
-        <h3>Intrinsic Motivation: ${intrinsic}</h3>
+        <h3>Intrinsic Motivation</h3>
         <p>${interpretIntrinsic(intrinsic)}</p>
 
-        <h3>Amotivation: ${amotivation}</h3>
+        <h3>Amotivation</h3>
         <p>${interpretAmotivation(amotivation)}</p>
 
         <br>
@@ -869,9 +918,18 @@ function renderPersonalityResult(traits) {
 
   let resultHTML = `<h2>Personality Profile</h2>`;
 
-  for (let trait in traits) {
+  // Filter out raw data - only show personality traits
+  const personalityTraits = {
+    Extraversion: traits.Extraversion,
+    Agreeableness: traits.Agreeableness,
+    Conscientiousness: traits.Conscientiousness,
+    Neuroticism: traits.Neuroticism,
+    Openness: traits.Openness
+  };
 
-    const score = traits[trait];
+  for (let trait in personalityTraits) {
+
+    const score = personalityTraits[trait];
     const level = interpretTrait(score);
 
     let interpretation = "";
@@ -879,31 +937,22 @@ function renderPersonalityResult(traits) {
    if (trait === "Neuroticism") {
     if (level === "High") {
         interpretation = `
-        You may experience emotions more intensely than some people, particularly during stressful or uncertain situations.
-
-        This sensitivity can sometimes feel overwhelming, but it can also make you deeply aware of your internal world and the emotional atmosphere around you.
-
-        Developing grounding strategies, emotional awareness practices, or stress management routines can help you channel this sensitivity into emotional strength rather than strain.
+        <h4>🌟 Emotional Sensitivity</h4>
+        <p>You experience emotions with beautiful depth and intensity, allowing deep connections with yourself and others.</p>
         `;
     }
 
     else if (level === "Low") {
         interpretation = `
-        You generally appear steady and calm, even when challenges arise.
-
-        You may recover relatively quickly from stress and not dwell excessively on setbacks.
-
-        This emotional stability can provide a strong foundation for leadership, teamwork, and long-term goals.
+        <h4>🌊 Emotional Resilience</h4>
+        <p>You possess wonderful emotional balance and stability, navigating life's challenges with grace and inner peace.</p>
         `;
     }
 
     else {
         interpretation = `
-        You likely experience emotional ups and downs within a typical range.
-
-        Stress may affect you at times, but it doesn’t appear to dominate your overall functioning.
-
-        Maintaining healthy coping habits will help preserve this balance.
+        <h4>🎭 Emotional Flexibility</h4>
+        <p>You flow beautifully with life's emotional rhythms, maintaining balance between awareness and regulation.</p>
         `;
     }
 }
@@ -911,63 +960,44 @@ function renderPersonalityResult(traits) {
     if (trait === "Extraversion") {
     if (level === "High") {
         interpretation = `
-        You likely feel energized when interacting with people and may naturally gravitate toward active, engaging environments. Being around others might stimulate your thinking, creativity, and motivation.
-
-        You may enjoy teamwork, discussions, leadership roles, or situations where ideas are exchanged openly. Social interaction may not drain you — instead, it may recharge you.
-
-        At times, you might need to consciously slow down and create space for reflection, especially when decisions require deeper thought. Balancing action with pause can make this strength even more powerful.
+        <h4>☀️ Social Energy</h4>
+        <p>You radiate beautiful social energy, lighting up rooms and creating natural connections with others.</p>
         `;
     }
 
     else if (level === "Low") {
         interpretation = `
-        You may prefer quieter environments and meaningful one-to-one interactions rather than large group settings. Solitude might not feel lonely — it may feel productive or peaceful.
-
-        You likely think deeply before speaking and may process ideas internally before sharing them. This can lead to thoughtful insights and careful decision-making.
-
-        In highly social or fast-paced environments, you might need recovery time afterward. Protecting that recharge space helps you stay balanced and effective.
+        <h4>🌙 Inner Wisdom</h4>
+        <p>You possess beautiful depth from honoring your inner world, reflecting profound insights and wisdom.</p>
         `;
     }
 
     else {
         interpretation = `
-        You seem comfortable balancing social interaction with personal space. You can engage when needed, yet you also value moments of reflection.
-
-        This flexibility allows you to adapt across different environments — from teamwork settings to independent work.
-
-        Paying attention to when you feel energized versus drained can help you structure your time in a way that supports your natural rhythm.
+        <h4>⚖️ Social Balance</h4>
+        <p>You've mastered the art of social balance, knowing when to engage and when to reflect.</p>
         `;
     }
 }
     if (trait === "Conscientiousness") {
-
     if (level === "High") {
         interpretation = `
-        You likely take responsibilities seriously and may prefer planning ahead rather than working impulsively.
-
-        Structure, organization, and goal-setting may feel natural to you. You might gain satisfaction from completing tasks properly and on time.
-
-        Sometimes, this strong sense of responsibility can lead to overworking or putting pressure on yourself. Remember that rest and flexibility are also productive.
+        <h4>🏆 Dedication to Excellence</h4>
+        <p>You possess remarkable responsibility and commitment to excellence, taking pride in doing things well.</p>
         `;
     }
 
     else if (level === "Low") {
         interpretation = `
-        You may prefer flexibility over strict routines and might work best when given creative freedom.
-
-        Deadlines or rigid systems may sometimes feel restrictive rather than motivating.
-
-        Creating light structure — without over-restricting yourself — can help maintain consistency while preserving your natural adaptability.
+        <h4>🎨 Creative Flexibility</h4>
+        <p>You dance to your own rhythm, thriving in unexpected situations with creative problem-solving skills.</p>
         `;
     }
 
     else {
         interpretation = `
-        You likely manage your responsibilities reasonably well while remaining adaptable when plans change.
-
-        You may not be overly rigid, but you also understand the value of preparation and follow-through.
-
-        Strengthening small planning habits can make your natural balance even more effective.
+        <h4>⚖️ Balanced Approach</h4>
+        <p>You've found the sweet spot between structure and spontaneity, creating harmony in responsibilities.</p>
         `;
     }
 }
@@ -975,72 +1005,58 @@ function renderPersonalityResult(traits) {
     if (trait === "Agreeableness") {
     if (level === "High") {
         interpretation = `
-        You likely value harmony and try to understand others’ perspectives before reacting. Empathy may come naturally to you.
-
-        In group settings, you might be the person who helps reduce tension or encourages cooperation. People may find you approachable and supportive.
-
-        At times, you may need to ensure your own needs and opinions are expressed clearly, especially if you tend to prioritize others first. Healthy boundaries strengthen, not weaken, kindness.
+        <h4>💝 Heart of Compassion</h4>
+        <p>You radiate kindness and empathy, creating deep, meaningful connections and harmony in relationships.</p>
         `;
     }
 
     else if (level === "Low") {
         interpretation = `
-        You may prioritize honesty, independence, and logical reasoning over simply maintaining harmony. You might feel comfortable expressing disagreement when necessary.
-
-        Others may see you as direct, clear, or strong-minded. This can be a powerful strength in decision-making and leadership.
-
-        Being mindful of tone and emotional context can help your ideas land effectively without being misunderstood.
+        <h4>🗡️ Commitment to Truth</h4>
+        <p>You possess courageous commitment to authenticity and principle, guiding others toward honesty.</p>
         `;
     }
 
     else {
         interpretation = `
-        You appear to balance empathy with assertiveness. You can cooperate with others while still expressing your own viewpoints.
-
-        In conflicts, you may try to see both sides rather than immediately taking a rigid stance.
-
-        This balance can support both healthy relationships and confident decision-making.
+        <h4>🤝 Balanced Compassion</h4>
+        <p>You've mastered compassionate strength, balancing understanding with principled boundaries.</p>
         `;
     }
 }
 
     if (trait === "Openness") {
-
     if (level === "High") {
         interpretation = `
-        You seem naturally curious and open to exploring new ideas, perspectives, and experiences.
-
-        You may enjoy creativity, imagination, and thinking beyond conventional boundaries.
-
-        This openness can support innovation and adaptability, especially in changing academic or professional environments.
+        <h4>🌈 Creative Spirit</h4>
+        <p>Your mind is a universe of possibilities, seeing the world through wonder and curiosity.</p>
         `;
     }
 
     else if (level === "Low") {
         interpretation = `
-        You may prefer practical approaches and familiar routines over constant experimentation.
-
-        Stability and clarity may feel more comfortable than abstract or unpredictable situations.
-
-        This grounded approach can help you stay realistic and focused when others become distracted by too many possibilities.
+        <h4>🏔️ Grounded Wisdom</h4>
+        <p>You possess practical wisdom and stability, providing a foundation of reliability and clarity.</p>
         `;
     }
 
     else {
         interpretation = `
-        You likely appreciate new experiences while also valuing structure and practicality.
-
-        You may explore ideas thoughtfully rather than impulsively.
-
-        This balance allows both creativity and grounded decision-making.
+        <h4>🌟 Balanced Curiosity</h4>
+        <p>You've found perfect balance between exploration and stability, nurturing growth while staying grounded.</p>
         `;
     }
 }
 
     resultHTML += `
-        <div style="margin-bottom:15px;">
-            <p><strong>${trait}</strong>: ${score} (${level})</p>
-            <p style="color:#444; font-size:14px; line-height:1.4;">
+        <div class="summary-card">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <h3 class="summary-title" style="margin: 0;">${trait}</h3>
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 25px; font-weight: 600; font-size: 1rem; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                    ${level}
+                </div>
+            </div>
+            <p class="summary-text" style="margin-top: 0;">
                 ${interpretation}
             </p>
         </div>
@@ -1155,31 +1171,40 @@ function generateEINarrative(totalEI) {
     if (totalEI <= 25) {
 
         message = `
-        <p>You may sometimes find it hard to understand or manage your emotions, especially during stressful situations. And that’s completely okay — emotional skills are something we build over time.</p>
-
-        <p>When pressure increases, emotions can feel overwhelming or confusing. With small practices like pausing before reacting, naming what you’re feeling, or reflecting on situations afterward, emotional clarity gradually improves.</p>
-
-        <p>This is not a fixed trait — it’s a skill set you can strengthen.</p>
+        <h4>🌱 Growing Your Emotional Garden</h4>
+        <p>You're on a beautiful journey of emotional discovery, and like any garden, emotional awareness takes time to cultivate. Be patient and kind with yourself as you learn to navigate the rich landscape of your feelings.</p>
+        
+        <p>Right now, emotions might sometimes feel like a complex puzzle, especially when stress clouds the picture. This isn't a struggle—it's an opportunity to develop incredible skills that will serve you throughout life.</p>
+        
+        <p><strong>Gentle practices:</strong> Try pausing to name what you're feeling, even if it's just "uncomfortable" or "confused." Each moment of awareness is like planting a seed of emotional wisdom.</p>
+        
+        <p>Remember: emotional intelligence isn't fixed—it's a skill you're building, one experience at a time. You're exactly where you need to be on this journey.</p>
         `;
 
     } else if (totalEI <= 38) {
 
         message = `
-        <p>You seem to have a fairly balanced understanding of your emotions and how they affect you.</p>
-
-        <p>In most situations, you likely manage your feelings reasonably well, though intense or unexpected situations may still challenge you — which is completely normal.</p>
-
-        <p>With continued self-awareness and reflection, this balance can grow into a strong emotional strength.</p>
+        <h4>🌿 Your Emerging Emotional Wisdom</h4>
+        <p>You're developing a beautiful relationship with your emotions! Like a skilled gardener, you're learning to work with your feelings rather than against them, creating a balanced emotional ecosystem.</p>
+        
+        <p>Most days, you likely navigate your emotional world with growing confidence. You're building the skills to understand what you feel and respond thoughtfully, even when emotions run high.</p>
+        
+        <p><strong>Your strength:</strong> You're finding that sweet spot between feeling deeply and responding wisely. This balance is rare and precious, and it's serving you well in relationships and challenges.</p>
+        
+        <p>Continue nurturing this awareness—each emotional conversation you have with yourself deepens your wisdom and strengthens your emotional resilience.</p>
         `;
 
     } else {
 
         message = `
-        <p>You appear to have strong emotional awareness and regulation skills.</p>
-
-        <p>You likely understand what you’re feeling and are able to respond thoughtfully rather than react impulsively. This can really help in academics, relationships, and leadership situations.</p>
-
-        <p>Continuing to stay reflective and empathetic will help you maintain this strength.</p>
+        <h4>🌳 Your Emotional Mastery</h4>
+        <p>You possess remarkable emotional wisdom! Like an ancient tree with deep roots, you've developed a strong foundation of emotional awareness that weathers life's storms with grace.</p>
+        
+        <p>Your ability to understand, honor, and work with your emotions is a true gift. You don't just manage feelings—you collaborate with them, using their energy and information to make wise decisions and build meaningful connections.</p>
+        
+        <p><strong>Your superpower:</strong> You can sit with discomfort without being consumed by it, and you can transform challenging emotions into opportunities for growth. This emotional alchemy serves you in all aspects of life.</p>
+        
+        <p>Continue sharing this gift with others—your emotional wisdom creates ripples of healing and understanding in the world around you.</p>
         `;
     }
 
@@ -1192,36 +1217,46 @@ function generateHappinessNarrative(totalHappiness) {
     if (totalHappiness <= 12) {
 
         message = `
-        <p>You might not be feeling as positive or satisfied as you’d like these days.</p>
-
-        <p>That doesn’t mean you’re failing or broken — sometimes we just go through phases where things feel a bit dull or heavy.</p>
-
-        <p>Even small meaningful activities, supportive friendships, or new experiences can gradually lift your daily mood.</p>
+        <h4>🌤️ Finding Your Light</h4>
+        <p>Right now, life might feel a bit gray, and that's okay. Even the brightest skies have cloudy days, and your feelings are valid and normal. You're not broken—you're human.</p>
+        
+        <p>This period of lower happiness isn't a permanent state; it's a season. Like winter, it serves a purpose—perhaps it's calling you to rest, reflect, or rediscover what truly matters to you.</p>
+        
+        <p><strong>Gentle invitations:</strong> Small moments of joy can be powerful—a warm cup of tea, a walk in nature, a conversation with a friend, or simply allowing yourself to rest without guilt.</p>
+        
+        <p>Be patient with yourself. Happiness isn't a destination you've failed to reach—it's a natural rhythm that ebbs and flows. You're exactly where you need to be.</p>
         `;
 
     } else if (totalHappiness <= 20) {
 
         message = `
-        <p>Your general sense of happiness seems fairly balanced.</p>
-
-        <p>You probably have both good days and stressful days — which is completely normal.</p>
-
-        <p>Continuing to invest time in things that matter to you can strengthen this stability.</p>
+        <h4>⛅️ Your Balanced Sunshine</h4>
+        <p>You've found a beautiful balance in life! Like a sky with both sun and clouds, your happiness has a natural rhythm that includes both bright moments and gentle shadows.</p>
+        
+        <p>This balance is actually a sign of emotional health—you can feel joy while also acknowledging life's challenges. You're not chasing constant happiness, but rather embracing life's full spectrum.</p>
+        
+        <p><strong>Your wisdom:</strong> You understand that happiness isn't about eliminating difficult feelings, but about building resilience to navigate all experiences with grace.</p>
+        
+        <p>Continue nurturing what brings you genuine joy and meaning. Your balanced approach to wellbeing creates sustainable happiness that weathers life's changes.</p>
         `;
 
     } else {
 
         message = `
-        <p>You seem to experience a strong sense of satisfaction and positive mood in your life.</p>
-
-        <p>This positive emotional base often helps with creativity, motivation, and resilience.</p>
-
-        <p>Maintaining balance and meaningful connections will help you sustain this strength.</p>
+        <h4>☀️ Your Radiant Joy</h4>
+        <p>You radiate a beautiful sense of joy and contentment! Like sunshine, your happiness warms everything around you and creates positive energy that others can feel.</p>
+        
+        <p>This isn't just about feeling good—it's about deep satisfaction and meaning. You've likely cultivated relationships, activities, and perspectives that nourish your soul and align with your values.</p>
+        
+        <p><strong>Your gift:</strong> Your happiness creates ripples of positivity in your relationships and communities. Your joy is contagious and inspiring, making the world a little brighter simply by being in it.</p>
+        
+        <p>Continue sharing your light while also honoring all your feelings. True happiness includes space for the full range of human emotion, and your wisdom shows in this balance.</p>
         `;
     }
 
     return message;
 }
+
 function generateStressNarrative(totalStress) {
 
     let message = "";
@@ -1229,31 +1264,40 @@ function generateStressNarrative(totalStress) {
     if (totalStress <= 4) {
 
         message = `
-        <p>Right now, things seem to feel manageable for you.</p>
-
-        <p>You probably handle daily pressures without feeling overwhelmed. That doesn’t mean life is perfect — just that you’re coping well at the moment.</p>
-
-        <p>Keep maintaining routines that help you recharge — sleep, breaks, and supportive conversations.</p>
+        <h4>🌊 Your Calm Waters</h4>
+        <p>You're navigating life's waters with beautiful grace! Like a peaceful lake, you've found ways to stay centered even when life creates ripples around you.</p>
+        
+        <p>This doesn't mean life is perfect—it means you've developed wonderful coping strategies that serve you well. You understand that stress is natural, but you don't let it overwhelm your inner peace.</p>
+        
+        <p><strong>Your wisdom:</strong> You know that prevention is better than cure. By maintaining routines that recharge you—rest, meaningful connections, and moments of joy—you keep your stress levels manageable.</p>
+        
+        <p>Continue honoring these practices; they're the foundation of your resilience and wellbeing.</p>
         `;
 
     } else if (totalStress <= 9) {
 
         message = `
-        <p>You’re experiencing a normal amount of stress — the kind that often comes with academics and responsibilities.</p>
-
-        <p>Sometimes it might feel a bit heavy, especially during busy periods, but it doesn’t appear out of control.</p>
-
-        <p>Small stress-relief habits — structured planning, short breaks, or talking things through — can make a noticeable difference.</p>
+        <h4>⛵️ Navigating Moderate Waves</h4>
+        <p>You're experiencing the normal ebb and flow of life's challenges. Like a skilled sailor, you're learning to navigate moderate waves while keeping your ship steady.</p>
+        
+        <p>This level of stress is actually a sign that you're engaging with life—taking on challenges, pursuing goals, and growing. Sometimes the waters get a bit choppy, but you're managing to stay on course.</p>
+        
+        <p><strong>Your opportunity:</strong> This is a perfect time to strengthen your stress-management toolkit. Small habits—brief pauses, deep breaths, or structured planning—can make these waves feel more manageable.</p>
+        
+        <p>Remember: stress isn't your enemy; it's a signal. Learning to listen to these signals helps you navigate life's beautiful journey with wisdom.</p>
         `;
 
     } else {
 
         message = `
-        <p>You may be feeling quite pressured or mentally overloaded right now.</p>
-
-        <p>When stress builds up for too long, it can affect focus, energy, and even mood. This doesn’t mean something is wrong with you — it just means your system might need rest or support.</p>
-
-        <p>Reaching out, slowing down where possible, or speaking with someone you trust can really help during this phase.</p>
+        <h4>🌪️ Weathering the Storm</h4>
+        <p>Right now, life might feel like you're in the middle of a storm, and that's okay. Even the strongest ships face rough seas, and your feelings are completely valid.</p>
+        
+        <p>This period of high stress isn't a sign of weakness—it's a sign that you've been carrying so much for so long. Your system is asking for the care and attention you so readily give to others.</p>
+        
+        <p><strong>Gentle reminder:</strong> You don't have to weather this storm alone. Reaching out for support, setting boundaries, or simply allowing yourself to rest isn't giving up—it's gathering strength.</p>
+        
+        <p>This storm will pass. In the meantime, be incredibly kind to yourself. You're doing the best you can with incredibly challenging circumstances.</p>
         `;
     }
 
@@ -1269,11 +1313,8 @@ function generateMotivationNarrative(data) {
     if (amotivation >= intrinsic && amotivation >= identified) {
 
         message = `
-        <p>You might be feeling somewhat disconnected from your work at the moment.</p>
-
-        <p>It may not always feel clear why certain tasks matter, which can reduce energy and consistency.</p>
-
-        <p>Revisiting your goals, breaking tasks into smaller steps, or reconnecting with purpose may help rebuild direction.</p>
+        <h4>🌫️ Finding Your Way</h4>
+        <p>You're moving through a fog of disconnection, but this pause invites reflection and rediscovery of purpose.</p>
         `;
     }
 
@@ -1281,11 +1322,8 @@ function generateMotivationNarrative(data) {
     else if (intrinsic >= identified && intrinsic >= external) {
 
         message = `
-        <p>Your motivation seems to come largely from genuine interest and enjoyment.</p>
-
-        <p>When something feels engaging or meaningful, you are likely to invest effort naturally.</p>
-
-        <p>This pattern is often linked with deeper learning and long-term consistency.</p>
+        <h4>🔥 Inner Fire</h4>
+        <p>You're blessed with internal motivation, driven by genuine interest and joy in what you do.</p>
         `;
     }
 
@@ -1293,11 +1331,8 @@ function generateMotivationNarrative(data) {
     else if (identified >= intrinsic) {
 
         message = `
-        <p>You appear to be guided by personal goals and values.</p>
-
-        <p>Even when tasks are not enjoyable, you likely see their importance and stay committed.</p>
-
-        <p>This reflects a strong sense of direction and internal alignment.</p>
+        <h4>🎯 Purpose-Driven Path</h4>
+        <p>You walk a beautiful path of purpose, seeing how tasks connect to your bigger picture and values.</p>
         `;
     }
 
@@ -1305,23 +1340,17 @@ function generateMotivationNarrative(data) {
     else if (external >= intrinsic) {
 
         message = `
-        <p>Your motivation seems influenced by structure, expectations, or external outcomes.</p>
-
-        <p>Deadlines, rewards, or accountability may help you stay on track.</p>
-
-        <p>Balancing this with personal meaning could strengthen long-term engagement.</p>
+        <h4>⚡ Responsive Energy</h4>
+        <p>You respond wonderfully to external cues, performing best with clear direction and structure.</p>
         `;
     }
 
-    // 🔻 Mixed profile
+    // 🔻 Mixed patterns
     else {
 
         message = `
-        <p>Your motivation appears to be mixed and situation-dependent.</p>
-
-        <p>You may shift between personal interest, goals, and external demands depending on the context.</p>
-
-        <p>Regular reflection can help maintain clarity and consistency.</p>
+        <h4>🌈 Motivational Symphony</h4>
+        <p>You draw from multiple motivation sources, adapting beautifully to different situations and needs.</p>
         `;
     }
 
@@ -1331,48 +1360,66 @@ function interpretIntrinsic(score) {
 
   if (score >= 8) {
     return `
-    You seem to be driven mainly by genuine interest and personal meaning.
-    When something feels important or engaging to you, effort comes naturally.
-    This type of motivation usually supports long-term satisfaction and deeper learning.
+    <h4>🔥 Your Inner Flame</h4>
+    <p>You're driven by a beautiful inner flame! When something captures your interest and feels meaningful, effort flows naturally and joyfully.</p>
+    
+    <p>This intrinsic motivation is your superpower—it creates sustainable energy and deep satisfaction in everything you pursue.</p>
+    
+    <p>Continue following what lights you up; your inner wisdom guides you toward meaningful growth and fulfillment.</p>
     `;
   }
 
-  if (score <= 4) {
+  if (score >= 14) {
     return `
-    You may not always feel internally connected to your tasks.
-    Sometimes activities may feel more like obligations than personal interests.
-    Exploring what truly excites or challenges you could strengthen this inner drive.
+    <h4>⚡ Your Spark of Interest</h4>
+    <p>You have a lovely spark of intrinsic motivation! When you find something interesting, you naturally want to engage and explore.</p>
+    
+    <p>This interest-driven energy serves you well, creating moments of genuine engagement and learning.</p>
+    
+    <p>Continue nurturing your curiosity and allowing yourself to follow what fascinates you.</p>
     `;
   }
 
   return `
-  Your internal motivation appears fairly balanced.
-  You may feel interested in some areas while relying on structure in others.
-  Reflecting on what personally matters to you can help maintain clarity.
+  <h4>🌱 Growing Your Inner Garden</h4>
+  <p>Your intrinsic motivation is like a garden waiting to bloom. Sometimes the seeds of interest are there, but they need the right conditions to grow.</p>
+  
+  <p>This is a beautiful opportunity to explore what might spark your curiosity and passion. Small experiments with new activities or deeper reflection on your values can help your inner garden flourish.</p>
+  
+  <p>Be patient with yourself—motivation grows through exploration and discovery.</p>
   `;
 }
-
 function interpretAmotivation(score) {
 
   if (score >= 8) {
     return `
-    You may sometimes feel disconnected from your tasks or unsure about the purpose behind them.
-    This can make starting or sustaining effort more difficult.
-    Clarifying goals and reconnecting with personal meaning may help restore momentum.
+    <h4>🌫️ Navigating the Fog</h4>
+    <p>Right now, you might be moving through a fog of disconnection, and that's completely okay. Even the most motivated people sometimes lose their sense of direction.</p>
+    
+    <p>This isn't a failure—it's an invitation to pause, reflect, and rediscover what truly matters to you.</p>
+    
+    <p>Be gentle with yourself. Sometimes the most powerful motivation emerges after a period of rest and renewal.</p>
     `;
   }
 
-  if (score <= 4) {
+  if (score >= 14) {
     return `
-    You generally do not appear disengaged from your work.
-    Even when tasks feel challenging, you likely find some reason to continue.
+    <h4>☁️ Light Cloud Cover</h4>
+    <p>You're experiencing some light cloud cover in your motivation. The sun is still there, but sometimes clouds obscure its warmth.</p>
+    
+    <p>This is a normal part of life's rhythm. Your motivation isn't gone—it's just resting or waiting for the right conditions.</p>
+    
+    <p>Small steps and gentle self-compassion can help the clouds clear naturally.</p>
     `;
   }
 
   return `
-  You may occasionally feel uncertain about your direction,
-  but this does not appear to dominate your overall motivation.
-  Periodic reflection can help maintain clarity.
+  <h4>☀️ Your Inner Light</h4>
+  <p>Your inner light is shining brightly! You generally feel connected to your activities and find meaning in what you do.</p>
+  
+  <p>This sense of purpose and engagement is a beautiful foundation that serves you well in all your endeavors.</p>
+  
+  <p>Continue honoring what brings you this sense of connection and flow.</p>
   `;
 }
 function restartAssessment() {
@@ -1384,6 +1431,9 @@ function sendToBackend() {
 
   fetch(WEB_APP_URL, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
     mode: "no-cors",
     body: JSON.stringify(sessionState)
   })
@@ -1394,6 +1444,7 @@ function sendToBackend() {
     console.error("Backend error:", err);
   });
 }
+
 // ---------------- START ----------------
 
 if (sessionState.completedTests.length > 0) {

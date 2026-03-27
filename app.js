@@ -410,9 +410,9 @@ function renderDashboard() {
         const buttonLabel = isDone ? 'View Results' : 'Start Test';
         
         return `
-            <div class="summary-card" style="cursor: pointer; display: flex; align-items: center; padding: 20px; gap: 20px; flex-wrap: wrap;" onclick="${action}">
+            <div class="summary-card" style="cursor: pointer; display: flex; align-items: center; padding: 20px; gap: 20px; flex-wrap: wrap; box-sizing: border-box;" onclick="${action}">
                 <div style="font-size: 2.5rem; flex-shrink: 0; min-width: 60px; text-align: center;">${icon}</div>
-                <div style="flex: 1; min-width: 0;">
+                <div style="flex: 1; min-width: 0; box-sizing: border-box;">
                     <h4 style="margin: 0 0 5px 0; color: ${isDone ? '#28a745' : '#333'}; font-size: 1.1rem;">
                         ${displayName} ${isDone ? '✓' : ''}
                     </h4>
@@ -420,7 +420,7 @@ function renderDashboard() {
                         ${isDone ? 'Completed - Click to view results' : 'Not started - Click to begin'}
                     </p>
                 </div>
-                <button class="${isDone ? 'secondary' : 'test-button'}" style="flex-shrink: 0; min-width: 120px;">
+                <button class="${isDone ? 'secondary' : 'test-button'}" style="flex-shrink: 0; min-width: 120px; box-sizing: border-box;">
                     ${buttonLabel}
                 </button>
             </div>
@@ -433,7 +433,7 @@ function renderDashboard() {
     );
 
     const content = `
-        <div style="display: flex; flex-direction: column; gap: 15px; margin: 30px 0;">
+        <div style="display: flex; flex-direction: column; gap: 15px; margin: 30px 0; max-width: 100%; overflow: hidden;">
             ${createTestItem("Personality", "Personality Profile", "🎭")}
             ${createTestItem("Emotional_Intelligence", "Emotional Intelligence", "💝")}
             ${createTestItem("Happiness", "Happiness Scale", "😊")}

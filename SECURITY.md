@@ -87,3 +87,5 @@ When the proxy is same-origin, production `connect-src` can remain `'self'`.
 ## Direct Apps Script compatibility mode
 
 A direct endpoint can be enabled in `config.js` with `submissionMode: "direct-apps-script"` and `allowDirectAppsScript: true`, but this exposes the URL and cannot provide meaningful abuse prevention. It is included only as a temporary compatibility path and is not the recommended deployment.
+
+Direct mode also requires explicitly allowing the Google Script domains in the page's `connect-src` CSP, which weakens the secure same-origin default.

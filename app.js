@@ -4,9 +4,9 @@ const { scales } = window.MindPopScoring;
 const config = window.MINDPOP_CONFIG || {};
 const app = document.getElementById("app");
 const ORDER = ["personality", "emotionalSkills", "happiness", "stress", "motivation"];
-const STORAGE_KEY = "mindpop_session_v2";
-const QUEUE_KEY = "mindpop_submission_queue_v2";
-const APP_VERSION = "2.0.0";
+const STORAGE_KEY = "mindpop_session_v3";
+const QUEUE_KEY = "mindpop_submission_queue_v3";
+const APP_VERSION = "2.1.0";
 let route = { name: "landing" };
 let notice = "";
 
@@ -19,22 +19,21 @@ function id() {
 
 function freshSession() {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     participantId: id(),
     startedAt: new Date().toISOString(),
-    consent: { participate: false, share: false, acceptedAt: "" },
-    profile: { department: "", role: "", year: "", gender: "" },
+    consent: { participate: false, dataUse: false, acceptedAt: "" },
+    profile: { name: "", faculty: "", role: "", year: "", gender: "" },
     drafts: {},
     results: {},
-    completedAt: "",
-    submission: { status: "not_sent", id: "", lastAttempt: 0 }
+    completedAt: ""
   };
 }
 
 function readSession() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (parsed && parsed.schemaVersion === 2 && parsed.participantId) return parsed;
+    if (parsed && parsed.schemaVersion === 3 && parsed.participantId) return parsed;
   } catch (_) {
     localStorage.removeItem(STORAGE_KEY);
   }
@@ -42,6 +41,8 @@ function readSession() {
 }
 
 localStorage.removeItem("mindpop_session");
+localStorage.removeItem("mindpop_session_v2");
+localStorage.removeItem("mindpop_submission_queue_v2");
 let session = readSession();
 
 function persist() {
@@ -72,6 +73,10 @@ function allDone() {
   return completed().length === ORDER.length;
 }
 
+function firstName() {
+  return (session.profile.name || "there").trim().split(/\s+/)[0];
+}
+
 function draw(html, focus = true) {
   app.innerHTML = '<div class="shell">' + html + "</div>";
   document.querySelectorAll("[data-meter]").forEach((meter) => {
@@ -95,11 +100,11 @@ function landingView() {
   return `
     <section class="hero">
       <div>
-        <p class="eyebrow">A five-part wellbeing check-in</p>
-        <h1>Pause. Notice. Pop back brighter.</h1>
-        <p class="lede">Five quick, research-informed reflections for personality, emotional skills, happiness, stress and motivation. No judgement. Just a clearer picture of right now.</p>
+        <p class="eyebrow">Five tiny check-ins. One clearer picture.</p>
+        <h1>Meet your mind, minus the clinical vibes.</h1>
+        <p class="lede">Explore personality, emotional skills, happiness, stress and motivation in about eight minutes. Finish all five to unlock a cute, shareable MindPop Mix.</p>
         <button class="button" type="button" data-action="begin">Start my check-in <span aria-hidden="true">&rarr;</span></button>
-        <div class="hero-note"><span>About 8 minutes</span><span>Private by default</span><span>Instant reflection</span></div>
+        <div class="hero-note"><span>Saved as you go</span><span>Instant reflections</span><span>Share card at 5/5</span></div>
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="orbit"><div class="orbit-core">M</div></div>
@@ -113,31 +118,38 @@ function consentView() {
     <section class="panel">
       <div class="panel-head">
         <p class="eyebrow">Before we begin</p>
-        <h2>Your choice, your pace.</h2>
-        <p>MindPop offers a personal reflection. It does not diagnose a condition, and taking part is voluntary.</p>
+        <h2>A quick, honest heads-up.</h2>
+        <p>This is a student wellbeing reflection, not a diagnosis. Your name is required by the institution, so your responses are identifiable.</p>
       </div>
       <ul class="consent-list">
-        <li><strong>1</strong><span>Answers are saved on this device so you can resume after a refresh.</span></li>
-        <li><strong>2</strong><span>No name or phone number is collected. A random participant ID is used instead.</span></li>
-        <li><strong>3</strong><span>Nothing is uploaded until you explicitly choose to share your completed snapshot.</span></li>
+        <li><strong>1</strong><span>Each completed check-in is saved separately, so partial progress can still help if you stop before all five.</span></li>
+        <li><strong>2</strong><span>Your name, profile details and answers for that check-in may be sent to the institution after you finish it.</span></li>
+        <li><strong>3</strong><span>Participation remains voluntary. You can leave at any time or clear the copy stored on this device.</span></li>
       </ul>
       <form id="consent-form">
         <label class="check-row"><input name="participate" type="checkbox" required><span>I choose to take part and understand these results are non-diagnostic.</span></label>
-        <label class="check-row"><input name="share" type="checkbox"><span>I am also happy to share an anonymous completed response with ${esc(config.institutionName || "the institution")}. Optional.</span></label>
+        <label class="check-row"><input name="dataUse" type="checkbox" required><span>I understand my name, profile and each completed check-in may be saved for institutional wellbeing analysis.</span></label>
         <div class="button-row">
-          <button class="button" type="submit">Continue</button>
+          <button class="button" type="submit">I understand, continue</button>
           <button class="button secondary" type="button" data-action="home">Not now</button>
         </div>
       </form>
     </section>`;
 }
 
-const departments = [
-  "Humanities & Social Sciences", "Sciences", "Paramedical Sciences",
+const faculties = [
+  "Humanities & Social Sciences", "Sciences", "Allied and Healthcare Sciences",
   "Pharmaceutical Sciences", "Engineering", "Computer Technology",
   "Nursing", "Physiotherapy & Rehabilitation", "Commerce & Management",
   "Agriculture Sciences & Technology", "Non-Teaching Staff"
 ];
+const roles = ["Undergraduate", "Postgraduate", "Diploma", "PhD", "Faculty", "Staff"];
+
+function yearChoices(role) {
+  if (role === "Undergraduate") return ["Year 1", "Year 2", "Year 3", "Year 4"];
+  if (role === "Postgraduate" || role === "Diploma") return ["Year 1", "Year 2"];
+  return [];
+}
 
 function options(items, selected, placeholder = "Select one") {
   return '<option value="">' + esc(placeholder) + "</option>" + items.map((item) =>
@@ -147,24 +159,45 @@ function options(items, selected, placeholder = "Select one") {
 
 function profileView() {
   const p = session.profile;
+  const years = yearChoices(p.role);
   return `
     <section class="panel">
       <div class="panel-head">
         <p class="eyebrow">One quick setup</p>
-        <h2>Help us add context.</h2>
-        <p>These broad details make anonymous group patterns more useful. Gender is optional.</p>
+        <h2>Tell us a little about you.</h2>
+        <p>These details help the institution understand wellbeing patterns across different student and staff groups.</p>
       </div>
       <form id="profile-form">
         <div class="honeypot" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
         <div class="form-grid">
-          <div class="field"><label for="department">Department</label><select id="department" name="department" required>${options(departments, p.department)}</select></div>
-          <div class="field"><label for="role">I am a...</label><select id="role" name="role" required>${options(["Undergraduate", "Postgraduate", "Faculty", "Staff"], p.role)}</select></div>
-          <div class="field"><label for="year">Year or experience</label><select id="year" name="year">${options(["1st Year", "2nd Year", "3rd Year", "4th Year", "0-2 Years", "3-5 Years", "6-10 Years", "10+ Years", "Not applicable"], p.year, "Choose if applicable")}</select></div>
-          <div class="field"><label for="gender">Gender <small>(optional)</small></label><select id="gender" name="gender">${options(["Woman", "Man", "Non-binary", "Prefer to self-describe", "Prefer not to say"], p.gender, "Optional")}</select></div>
+          <div class="field full">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" maxlength="80" autocomplete="name" value="${esc(p.name)}" required>
+            <small>Required by your institution and included with saved responses.</small>
+          </div>
+          <div class="field"><label for="faculty">Faculty of</label><select id="faculty" name="faculty" required>${options(faculties, p.faculty, "Choose a faculty")}</select></div>
+          <div class="field"><label for="role">I am a...</label><select id="role" name="role" required>${options(roles, p.role)}</select></div>
+          <div class="field" id="year-field"${years.length ? "" : " hidden"}>
+            <label for="year">Current year</label>
+            <select id="year" name="year"${years.length ? " required" : ""}>${options(years, p.year, "Choose your year")}</select>
+          </div>
+          <div class="field"><label for="gender">Gender</label><select id="gender" name="gender" required>${options(["Woman", "Man", "Non-binary", "Prefer to self-describe", "Prefer not to say"], p.gender)}</select></div>
         </div>
         <button class="button" type="submit">Show me the five check-ins</button>
       </form>
     </section>`;
+}
+
+function updateYearField(role) {
+  const field = document.getElementById("year-field");
+  const select = document.getElementById("year");
+  if (!field || !select) return;
+  const years = yearChoices(role);
+  const selected = years.includes(select.value) ? select.value : "";
+  field.hidden = years.length === 0;
+  select.required = years.length > 0;
+  select.disabled = years.length === 0;
+  select.innerHTML = options(years, selected, "Choose your year");
 }
 
 function scaleCard(scale) {
@@ -173,7 +206,11 @@ function scaleCard(scale) {
   const answered = draft.filter((value) => value !== null && value !== undefined).length;
   let status = scale.time;
   let action = "Start";
-  if (done) { status = "Done"; action = "View reflection"; }
+  if (done) {
+    const saved = session.results[scale.id].submissionStatus;
+    status = saved === "sent" ? "Saved" : saved === "saving" ? "Saving..." : "On device";
+    action = "View reflection";
+  }
   else if (answered) { status = answered + "/" + scale.questions.length; action = "Keep going"; }
   return `
     <button class="scale-card ${done ? "done" : ""}" type="button" data-action="${done ? "result" : "scale"}" data-scale="${scale.id}">
@@ -187,14 +224,14 @@ function dashboardView() {
   return `
     <section>
       <div class="dashboard-head">
-        <div><p class="eyebrow">Your MindPop mix</p><h2>${count ? "Nice momentum." : "Pick a place to start."}</h2><p>${count ? count + " of 5 complete. Your progress is saved here." : "Any order works. Most take a minute or two."}</p></div>
+        <div><p class="eyebrow">Hey ${esc(firstName())}</p><h2>${count ? "Nice momentum." : "Pick a place to start."}</h2><p>${count ? count + " of 5 complete. Each finished test is saved separately." : "Any order works. Most take a minute or two."}</p></div>
         <div class="overall-progress"><strong>${count}/5 complete</strong><progress value="${count}" max="5">${count} of 5</progress></div>
       </div>
       <div class="scale-grid">
         ${ORDER.map((scaleId) => scaleCard(scales[scaleId])).join("")}
         <div class="unlock">
-          <div><h3>${allDone() ? "Your full snapshot is ready" : "Complete all five to connect the dots"}</h3><p>${allDone() ? "See how your five reflections sit together." : "A combined summary brings the patterns into one practical view."}</p></div>
-          <button class="button ${allDone() ? "" : "secondary"}" type="button" data-action="summary" ${allDone() ? "" : "disabled"}>${allDone() ? "Open my snapshot" : (5 - count) + " to go"}</button>
+          <div><h3>${allDone() ? "Your MindPop Mix is ready!" : "Finish all five to unlock your MindPop Mix"}</h3><p>${allDone() ? "Open a cute report you can save or share without your name or raw answers." : "Your share card is waiting. No pressure, just a little completion sparkle."}</p></div>
+          <button class="button ${allDone() ? "" : "secondary"}" type="button" data-action="summary" ${allDone() ? "" : "disabled"}>${allDone() ? "Open my report" : count + "/5 complete"}</button>
         </div>
       </div>
     </section>`;
@@ -299,6 +336,49 @@ function resultModel(scaleId, result) {
   };
 }
 
+function deeperNarrative(scaleId, result) {
+  const score = result.score;
+  if (scaleId === "personality") {
+    const top = Object.entries(score.domains).sort((a, b) => b[1] - a[1])[0][0];
+    const stories = {
+      extraversion: "You may recharge through people, conversation and visible momentum. Quiet time can still matter; social energy is simply a noticeable part of your mix.",
+      agreeableness: "You may naturally notice other people's needs and prefer cooperation. A kind boundary can help that warmth stay sustainable.",
+      conscientiousness: "Structure, preparation and finishing things may come fairly naturally. On difficult weeks, a smaller plan can work better than expecting perfect consistency.",
+      emotionalReactivity: "Your answers suggest emotions may feel especially vivid or quick to arrive. Naming the feeling can create a little space before the next move.",
+      openness: "New ideas, imagination and variety may energise you. Turning one interesting idea into a tiny action can keep curiosity from becoming overload."
+    };
+    return stories[top];
+  }
+  if (scaleId === "emotionalSkills") {
+    const sorted = Object.entries(score.domains).sort((a, b) => b[1] - a[1]);
+    return "Your strongest area is " + labels[sorted[0][0]].toLowerCase() + ", while " + labels[sorted[sorted.length - 1][0]].toLowerCase() + " may be the most useful place to practise. Neither is fixed.";
+  }
+  if (scaleId === "happiness") {
+    if (score.average >= 5) return "There is a solid positive signal here. It does not erase hard days; it suggests satisfaction or enjoyment is fairly available overall.";
+    if (score.average <= 3) return "Life may feel flat or heavy lately. Treat this as a prompt for care and connection, not as a verdict about you.";
+    return "Your result sits in a mixed zone: there may be good moments alongside real strain. Both can be true at once.";
+  }
+  if (scaleId === "stress") {
+    if (score.total >= 11) return "Several demands may be competing for more energy than you currently have. Reducing one load and telling someone can be more useful than pushing through alone.";
+    if (score.total <= 5) return "Things feel relatively manageable right now. This is a good time to notice which routines and people are helping you stay steady.";
+    return "Pressure is present but not at the highest end. A little recovery and a clearer next step may prevent it from stacking up.";
+  }
+  const stories = {
+    intrinsic: "Interest and enjoyment seem to be doing much of the pulling. Choice and variety may help that energy last.",
+    identified: "You are often moved by personal meaning and long-term value. Making that purpose visible can help on boring days.",
+    introjected: "Guilt or self-pressure may be carrying part of the workload. A kinder reason and a smaller target can make motivation less exhausting.",
+    external: "Expectations, rewards or consequences may be doing much of the pushing. Finding one reason that belongs to you can add staying power.",
+    amotivation: "The why may feel blurry right now. That can happen with burnout or disconnection; begin with one achievable step and ask for support if it persists."
+  };
+  return stories[score.dominant];
+}
+
+function saveStatusBlock(result) {
+  if (result.submissionStatus === "sent") return '<p class="notice success">Saved to the institution. You can safely continue or come back later.</p>';
+  if (result.submissionStatus === "saving") return '<p class="notice">Saving this completed check-in...</p>';
+  return '<p class="notice">Saved on this device and queued until a secure submission endpoint is available.</p>';
+}
+
 function supportBlock() {
   const url = safeUrl(config.supportUrl);
   return `<div class="support-card"><h3>A little support could help</h3><p>A high stress reflection is not a diagnosis, but you do not have to carry pressure alone.</p>${url ? '<a class="button secondary" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(config.supportLabel || "Find support") + "</a>" : "<p><strong>" + esc(config.supportLabel || "Contact your campus wellbeing team") + "</strong></p>"}</div>`;
@@ -312,12 +392,27 @@ function resultView(scaleId) {
   return `
     <section class="result-wrap">
       <div class="result-hero"><p class="eyebrow">${esc(scale.title)} &middot; complete</p><h1>${esc(model.headline)}</h1><p>${esc(model.body)}</p></div>
+      ${saveStatusBlock(result)}
       <div class="metric-grid">${model.metrics.join("")}</div>
-      <div class="insight"><h3>Try this</h3><p>${esc(model.action)}</p></div>
+      <div class="insight"><h3>What this may look like</h3><p>${esc(deeperNarrative(scaleId, result))}</p><p class="insight-action"><strong>Try this:</strong> ${esc(model.action)}</p></div>
       ${model.support ? supportBlock() : ""}
       <p class="notice">Scoring basis: ${esc(scale.source)}. Results are descriptive and non-diagnostic.</p>
-      <div class="button-row"><button class="button" type="button" data-action="dashboard">Back to the five</button>${allDone() ? '<button class="button secondary" type="button" data-action="summary">Full snapshot</button>' : ""}</div>
+      <div class="button-row"><button class="button" type="button" data-action="dashboard">Back to the five</button>${allDone() ? '<button class="button secondary" type="button" data-action="summary">See my MindPop Mix</button>' : ""}</div>
     </section>`;
+}
+
+function combinedNarrative() {
+  const personality = resultModel("personality", session.results.personality);
+  const emotional = resultModel("emotionalSkills", session.results.emotionalSkills);
+  const happiness = session.results.happiness.score.average;
+  const stress = session.results.stress.score.total;
+  const motivation = labels[session.results.motivation.score.dominant].toLowerCase();
+  const balance = stress >= 11
+    ? "Your system may be asking for less load and more support."
+    : stress <= 5
+      ? "Your stress signal looks fairly manageable right now."
+      : "There is some pressure in the mix, so recovery still deserves a calendar slot.";
+  return firstName() + ", " + personality.headline.toLowerCase() + " " + emotional.headline + " Happiness is " + happiness + "/7, while " + motivation + " is your strongest motivation signal. " + balance;
 }
 
 function summaryView() {
@@ -325,28 +420,26 @@ function summaryView() {
   const rows = ORDER.map((scaleId) => {
     const scale = scales[scaleId];
     const model = resultModel(scaleId, session.results[scaleId]);
-    return `<div class="summary-row"><span class="scale-icon">${scale.icon}</span><div><h3>${esc(scale.short)}</h3><p>${esc(model.headline)}</p></div><strong>Complete</strong></div>`;
+    return `<div class="vibe-item"><span class="vibe-icon">${scale.icon}</span><div><strong>${esc(scale.short)}</strong><p>${esc(model.headline)}</p></div></div>`;
   }).join("");
-  const status = session.submission.status;
-  let statusCopy = "";
-  if (status === "sent") statusCopy = '<p class="notice success">Anonymous response submitted. Thank you.</p>';
-  if (status === "queued") statusCopy = '<p class="notice">Saved on this device. It will not leave the browser until a secure submission endpoint is connected.</p>';
-  if (status === "error") statusCopy = '<p class="notice error">The response could not be sent, so it remains saved on this device.</p>';
+  const sent = Object.values(session.results).filter((result) => result.submissionStatus === "sent").length;
   return `
     <section class="result-wrap">
-      <div class="result-hero"><p class="eyebrow">All five complete</p><h1>Your MindPop snapshot.</h1><p>Five lenses, one current picture. Keep what feels useful and leave what does not.</p></div>
-      <div class="summary-list">${rows}</div>
-      <div class="insight"><h3>A good next move</h3><p>Pick just one "Try this" idea from your results. Tiny experiments beat a giant self-improvement list.</p></div>
-      <div class="submit-card">
-        <h3>Share the anonymous snapshot?</h3>
-        <p>${session.consent.share ? "You opted in. One completed record will be sent - never your name or phone number." : "You chose local-only mode. You can opt in now, or keep the snapshot entirely on this device."}</p>
-        <div class="button-row">
-          <button class="button" type="button" data-action="${session.consent.share ? "submit" : "enable-share"}">${session.consent.share ? "Submit anonymous response" : "Opt in & submit"}</button>
-          <button class="button secondary" type="button" data-action="download">Download my copy</button>
-        </div>
-        ${statusCopy}${notice ? '<p class="notice error">' + esc(notice) + "</p>" : ""}
+      <div class="vibe-report">
+        <span class="vibe-badge">5/5 COMPLETE &#10022;</span>
+        <p class="vibe-kicker">My MindPop Mix</p>
+        <h1>Self-awareness, but make it cute.</h1>
+        <p class="vibe-story">${esc(combinedNarrative())}</p>
+        <div class="vibe-grid">${rows}</div>
+        <p class="vibe-foot">A reflection, not a diagnosis. Generated by MindPop.</p>
       </div>
-      <div class="button-row"><button class="button secondary" type="button" data-action="dashboard">Back to dashboard</button></div>
+      <div class="save-summary"><strong>Your five check-ins are complete.</strong><p>${sent} sent securely &middot; ${5 - sent} saved on this device or queued. The share image leaves out your name and raw answers.</p></div>
+      ${notice ? '<p class="notice success">' + esc(notice) + "</p>" : ""}
+      <div class="button-row report-actions">
+        <button class="button" type="button" data-action="share-report">Share or save my report</button>
+        <button class="button secondary" type="button" data-action="download">Download my private data</button>
+        <button class="button secondary" type="button" data-action="dashboard">Back to dashboard</button>
+      </div>
     </section>`;
 }
 
@@ -356,10 +449,11 @@ function privacyView() {
     <section class="panel">
       <div class="panel-head"><p class="eyebrow">Privacy in plain language</p><h2>Your answers belong to you.</h2></div>
       <div class="privacy-copy">
-        <h3>What stays on this device</h3><p>Your random ID, broad demographic context, progress, answers and results are kept in local browser storage so the experience can recover after a refresh.</p>
-        <h3>What is not collected</h3><p>MindPop does not ask for a name or phone number. This version has no advertising, analytics, trackers, third-party fonts or social pixels.</p>
-        <h3>What can be shared</h3><p>Only a completed, anonymous snapshot is eligible for upload, and only after you opt in and press submit. If the secure endpoint is not connected, it stays queued locally.</p>
-        <h3>Important limit</h3><p>A browser cannot hide a backend URL or secret. Production submissions must go through a protected server-side proxy with validation, rate limits and origin checks.</p>
+        <h3>What this app collects</h3><p>Your required name, faculty, role, applicable year, gender, answers, calculated scores and completion times. Because a name is collected, this is identifiable data.</p>
+        <h3>When data is sent</h3><p>After consent, every completed check-in is prepared as its own saved record. If a secure endpoint is configured it is sent immediately; otherwise it remains queued on this device. Unfinished answers stay on this device.</p>
+        <h3>What sharing includes</h3><p>The optional report image contains broad result headlines only. It excludes your name, profile details and raw answers by default. You decide whether to share it.</p>
+        <h3>Important limit</h3><p>A browser cannot hide a Google Apps Script URL or secret. Production submissions must use a protected server-side proxy with validation, rate limits and access controls.</p>
+        <h3>Your choice</h3><p>You may stop at any time. Clearing this device removes its local copy, but cannot recall records already received by the institution.</p>
         ${policy ? '<p><a href="' + esc(policy) + '" target="_blank" rel="noopener noreferrer">Read the full institutional privacy policy</a></p>' : ""}
       </div>
       <div class="danger-zone"><button class="button danger" type="button" data-action="clear">Delete my local data</button></div>
@@ -397,71 +491,68 @@ function finishScale(scaleId) {
   session.results[scaleId] = {
     responses: [...responses],
     score: scale.score(responses),
-    completedAt: new Date().toISOString()
+    completedAt: new Date().toISOString(),
+    submissionId: id(),
+    submissionStatus: "saving"
   };
   delete session.drafts[scaleId];
   if (allDone() && !session.completedAt) session.completedAt = new Date().toISOString();
   persist();
   go("result", { scaleId });
+  void sendProgress(scaleId);
 }
 
-function payload() {
-  const assessments = {};
-  ORDER.forEach((scaleId) => {
-    assessments[scaleId] = {
-      responses: session.results[scaleId].responses,
-      score: session.results[scaleId].score,
-      completedAt: session.results[scaleId].completedAt
-    };
-  });
+function progressPayload(scaleId) {
+  const result = session.results[scaleId];
   return {
-    schemaVersion: 2,
+    recordType: "assessment-progress",
+    schemaVersion: 3,
     appVersion: APP_VERSION,
-    submissionId: session.submission.id || id(),
+    submissionId: result.submissionId,
     participantId: session.participantId,
     consentedAt: session.consent.acceptedAt,
     startedAt: session.startedAt,
-    completedAt: session.completedAt,
     profile: { ...session.profile },
-    assessments,
+    assessment: {
+      id: scaleId,
+      source: scales[scaleId].source,
+      responses: [...result.responses],
+      score: result.score,
+      completedAt: result.completedAt
+    },
+    progress: { completed: completed().length, total: ORDER.length, isComplete: allDone() },
     client: { language: navigator.language, timezoneOffsetMinutes: new Date().getTimezoneOffset() }
   };
 }
 
-function queueSubmission(data) {
-  let queue = [];
-  try { queue = JSON.parse(localStorage.getItem(QUEUE_KEY)) || []; } catch (_) { queue = []; }
-  queue = queue.filter((item) => item.submissionId !== data.submissionId);
-  queue.push(data);
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-3)));
+function readQueue() {
+  try {
+    const queue = JSON.parse(localStorage.getItem(QUEUE_KEY));
+    return Array.isArray(queue) ? queue : [];
+  } catch (_) {
+    return [];
+  }
 }
 
-async function submit() {
-  if (!allDone() || !session.consent.share) return;
-  const now = Date.now();
-  if (now - session.submission.lastAttempt < 10000) {
-    notice = "Please wait a few seconds before trying again.";
-    return render();
-  }
-  session.submission.lastAttempt = now;
-  const data = payload();
-  session.submission.id = data.submissionId;
+function queueSubmission(data) {
+  const queue = readQueue().filter((item) => item.submissionId !== data.submissionId);
+  queue.push(data);
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-10)));
+}
+
+async function sendProgress(scaleId) {
+  const result = session.results[scaleId];
+  if (!result || !session.consent.dataUse) return;
+  const data = progressPayload(scaleId);
   const endpoint = String(config.submissionEndpoint || "").trim();
+  const directAppsScript = /script\.google(?:usercontent)?\.com/i.test(endpoint);
 
-  if (!endpoint) {
+  if (!endpoint || (directAppsScript && !config.allowDirectAppsScript)) {
     queueSubmission(data);
-    session.submission.status = "queued";
+    result.submissionStatus = "queued";
     persist();
-    return render();
-  }
-
-  const directAppsScript = /script\.google\.com/i.test(endpoint);
-  if (directAppsScript && !config.allowDirectAppsScript) {
-    queueSubmission(data);
-    session.submission.status = "queued";
-    notice = "Direct Apps Script submission is disabled. Connect a protected proxy first.";
-    persist();
-    return render();
+    if (route.name === "result" && route.scaleId === scaleId) render();
+    return;
   }
 
   try {
@@ -476,12 +567,117 @@ async function submit() {
       body: JSON.stringify(data)
     });
     if (!direct && !response.ok) throw new Error("Submission rejected");
-    session.submission.status = "sent";
+    result.submissionStatus = "sent";
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(readQueue().filter((item) => item.submissionId !== data.submissionId)));
   } catch (_) {
     queueSubmission(data);
-    session.submission.status = "error";
+    result.submissionStatus = "queued";
   }
   persist();
+  if (route.name === "result" && route.scaleId === scaleId) render();
+}
+
+function reportText() {
+  return ORDER.map((scaleId) => scales[scaleId].short + ": " + resultModel(scaleId, session.results[scaleId]).headline).join("\n");
+}
+
+function drawWrapped(context, text, x, y, maxWidth, lineHeight, maxLines) {
+  const words = text.split(/\s+/);
+  const lines = [];
+  let line = "";
+  words.forEach((word) => {
+    const trial = line ? line + " " + word : word;
+    if (context.measureText(trial).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = trial;
+    }
+  });
+  if (line) lines.push(line);
+  lines.slice(0, maxLines).forEach((entry, index) => context.fillText(entry, x, y + index * lineHeight));
+}
+
+function makeReportCanvas() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1350;
+  const context = canvas.getContext("2d");
+  const gradient = context.createLinearGradient(0, 0, 1080, 1350);
+  gradient.addColorStop(0, "#17332a");
+  gradient.addColorStop(0.58, "#205f4e");
+  gradient.addColorStop(1, "#d98b46");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.fillStyle = "rgba(255,255,255,.12)";
+  context.beginPath();
+  context.arc(930, 130, 240, 0, Math.PI * 2);
+  context.fill();
+  context.beginPath();
+  context.arc(100, 1210, 290, 0, Math.PI * 2);
+  context.fill();
+
+  context.fillStyle = "#d9f4e5";
+  context.font = "700 30px Arial";
+  context.fillText("MINDPOP  /  5 OF 5 COMPLETE", 80, 100);
+  context.fillStyle = "#ffffff";
+  context.font = "800 84px Arial";
+  context.fillText("My MindPop Mix", 80, 205);
+  context.font = "500 34px Arial";
+  context.fillText("Self-awareness, but make it cute.", 80, 265);
+
+  let y = 390;
+  ORDER.forEach((scaleId, index) => {
+    const model = resultModel(scaleId, session.results[scaleId]);
+    context.fillStyle = index % 2 ? "#fff0d8" : "#d9f4e5";
+    context.beginPath();
+    if (context.roundRect) context.roundRect(80, y, 920, 130, 28);
+    else context.rect(80, y, 920, 130);
+    context.fill();
+    context.fillStyle = "#17332a";
+    context.font = "800 28px Arial";
+    context.fillText(scales[scaleId].short.toUpperCase(), 115, y + 44);
+    context.font = "600 31px Arial";
+    drawWrapped(context, model.headline, 115, y + 88, 820, 36, 2);
+    y += 155;
+  });
+
+  context.fillStyle = "#ffffff";
+  context.font = "600 25px Arial";
+  drawWrapped(context, "A reflection, not a diagnosis. No name or raw answers included.", 80, 1215, 900, 34, 2);
+  context.font = "800 28px Arial";
+  context.fillText("mindpop  \u2728  notice your patterns", 80, 1300);
+  return canvas;
+}
+
+function canvasBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Image unavailable")), "image/png");
+  });
+}
+
+async function shareReport() {
+  if (!allDone()) return;
+  try {
+    const blob = await canvasBlob(makeReportCanvas());
+    const file = new File([blob], "my-mindpop-mix.png", { type: "image/png" });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ title: "My MindPop Mix", text: "I finished all five MindPop check-ins.\n\n" + reportText(), files: [file] });
+      notice = "Your report is ready to share.";
+    } else {
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = file.name;
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      notice = "Your shareable report image was downloaded.";
+    }
+  } catch (error) {
+    if (error && error.name === "AbortError") return;
+    notice = "Could not create the report image on this browser. Try downloading your private data instead.";
+  }
   render();
 }
 
@@ -504,22 +700,32 @@ document.addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(event.target);
   if (event.target.id === "consent-form") {
-    if (!form.get("participate")) return;
-    session.consent = { participate: true, share: Boolean(form.get("share")), acceptedAt: new Date().toISOString() };
+    if (!form.get("participate") || !form.get("dataUse")) return;
+    session.consent = { participate: true, dataUse: true, acceptedAt: new Date().toISOString() };
     persist();
     return go("profile");
   }
   if (event.target.id === "profile-form") {
     if (form.get("website")) return;
+    const role = String(form.get("role") || "");
+    const allowedYears = yearChoices(role);
+    const year = String(form.get("year") || "");
+    if (allowedYears.length && !allowedYears.includes(year)) return;
     session.profile = {
-      department: String(form.get("department") || ""),
-      role: String(form.get("role") || ""),
-      year: String(form.get("year") || ""),
+      name: String(form.get("name") || "").trim(),
+      faculty: String(form.get("faculty") || ""),
+      role,
+      year: allowedYears.length ? year : "",
       gender: String(form.get("gender") || "")
     };
+    if (!session.profile.name || !session.profile.faculty || !session.profile.role || !session.profile.gender) return;
     persist();
     go("dashboard");
   }
+});
+
+document.addEventListener("change", (event) => {
+  if (event.target.id === "role") updateYearField(event.target.value);
 });
 
 document.addEventListener("click", (event) => {
@@ -545,12 +751,7 @@ document.addEventListener("click", (event) => {
   }
   if (action === "finish") return finishScale(target.dataset.scale);
   if (action === "summary") return go("summary");
-  if (action === "enable-share") {
-    session.consent.share = true;
-    persist();
-    return submit();
-  }
-  if (action === "submit") return submit();
+  if (action === "share-report") return shareReport();
   if (action === "download") return downloadSnapshot();
   if (action === "clear" && window.confirm("Delete all MindPop progress and queued responses from this device?")) {
     localStorage.removeItem(STORAGE_KEY);

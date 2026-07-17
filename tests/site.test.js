@@ -26,16 +26,29 @@ assert.match(config, /submissionEndpoint:\s*""/);
 assert.match(config, /allowDirectAppsScript:\s*false/);
 assert.doesNotMatch(config + app, /AKfy[a-zA-Z0-9_-]+/);
 assert.doesNotMatch(html + app, /id=["']phone|name=["']phone/i);
-assert.doesNotMatch(html + app, /id=["']name|name=["']name/i);
+
+assert.match(app, /id="name" name="name"[^>]+required/);
+assert.match(app, /id="gender" name="gender" required/);
+assert.match(app, /Faculty of/);
+assert.match(app, /Allied and Healthcare Sciences/);
+assert.match(app, /"Diploma", "PhD"/);
+assert.match(app, /role === "Undergraduate".*Year 4/);
+assert.match(app, /role === "Postgraduate" \|\| role === "Diploma"/);
+assert.match(app, /recordType: "assessment-progress"/);
+assert.match(app, /void sendProgress\(scaleId\)/);
+assert.match(app, /submissionStatus: "saving"/);
+assert.match(app, /Share or save my report/);
+assert.match(app, /No name or raw answers included/);
 
 assert.match(app, /credentials:\s*"omit"/);
 assert.match(app, /referrerPolicy:\s*"no-referrer"/);
-assert.match(app, /localStorage\.removeItem\("mindpop_session"\)/);
+assert.match(app, /localStorage\.removeItem\("mindpop_session_v2"\)/);
 assert.match(css, /prefers-reduced-motion/);
+assert.match(css, /\.vibe-report/);
 
 for (const file of sourceFiles) {
   const text = read(file);
   assert.equal(/[^\x00-\x7F]/.test(text), false, file + " should remain ASCII-safe");
 }
 
-console.log("MindPop site security checks passed.");
+console.log("MindPop site security and workflow checks passed.");

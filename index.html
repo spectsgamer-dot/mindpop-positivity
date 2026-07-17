@@ -1,15 +1,33 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>MindPop Psychological Assessment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7fbf8">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta name="description" content="A private, five-part student wellbeing check-in with instant, non-diagnostic reflections.">
+  <title>MindPop &mdash; a quick wellbeing check-in</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="config.js" defer></script>
+  <script src="scoring.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-
-  <div class="card" id="app"></div>
-
-  <script src="app.js"></script>
+  <a class="skip-link" href="#app">Skip to the check-in</a>
+  <header class="site-header" aria-label="MindPop header">
+    <a class="brand" href="#" data-action="home" aria-label="MindPop home">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span>MindPop</span>
+    </a>
+    <button class="quiet-button" type="button" data-action="privacy">Privacy</button>
+  </header>
+  <main id="app" tabindex="-1" aria-live="polite"></main>
+  <footer class="site-footer">
+    <p>A reflection tool, not a diagnosis or a replacement for professional care.</p>
+  </footer>
+  <noscript>
+    <div class="noscript">MindPop needs JavaScript to run. Please enable it and reload the page.</div>
+  </noscript>
 </body>
 </html>

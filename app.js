@@ -1,1454 +1,765 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwtD3CzKvIpJvgjnpL4C3mJnOjgekySWh8t0Cq1na2QG_jb6MXpWNxkPHCGmy5BhDot3Q/exec";
+"use strict";
 
-// ---------------- SESSION ----------------
+const { scales } = window.MindPopScoring;
+const config = window.MINDPOP_CONFIG || {};
+const app = document.getElementById("app");
+const ORDER = ["personality", "emotionalSkills", "happiness", "stress", "motivation"];
+const STORAGE_KEY = "mindpop_session_v3";
+const QUEUE_KEY = "mindpop_submission_queue_v3";
+const APP_VERSION = "2.1.0";
+let route = { name: "landing" };
+let notice = "";
 
-let sessionState = JSON.parse(localStorage.getItem("mindpop_session")) || {
-  anonId: "",
-  demographics: {},
-  completedTests: [],
-
-  results: {
-    Personality: null,
-    Emotional_Intelligence: null,
-    Happiness: null,
-    Stress: null,
-    Motivation: null
-  }
-};
-const savedSession = localStorage.getItem("mindpop_session");
-
-if (savedSession) {
-    sessionState = JSON.parse(savedSession);
+function id() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
 }
 
-// ---------------- SCALE DEFINITIONS ----------------
-
-const scales = {
-  Personality: {
-    items: 10,
-    likert: 5,
-    reverse: [1,3,4,5,7],
-    labels: [
-      "Strongly Disagree",
-      "Disagree",
-      "Neutral",
-      "Agree",
-      "Strongly Agree"
-    ],
-    questions: [
-      "I see myself as someone who is reserved.",
-      "I see myself as someone who is generally trusting.",
-      "I see myself as someone who tends to be lazy.",
-      "I see myself as someone who is relaxed, handles stress well.",
-      "I see myself as someone who has few artistic interests.",
-      "I see myself as someone who is outgoing, sociable.",
-      "I see myself as someone who tends to find fault with others.",
-      "I see myself as someone who does a thorough job.",
-      "I see myself as someone who gets nervous easily.",
-      "I see myself as someone who has an active imagination."
-    ]
-  },
-  Emotional_Intelligence: {
-  items: 10,
-  likert: 5,
-  reverse: [],
-  labels: [
-    "Strongly Disagree",
-    "Disagree",
-    "Neutral",
-    "Agree",
-    "Strongly Agree"
-  ],
-  questions: [
-    "I understand my emotions clearly.",
-    "I can regulate my emotions effectively.",
-    "I stay calm under pressure.",
-    "I understand how others feel.",
-    "I can respond appropriately to others' emotions.",
-    "I am aware of how my emotions influence my behavior.",
-    "I handle emotional situations well.",
-    "I am sensitive to the feelings of others.",
-    "I can control impulsive emotional reactions.",
-    "I express my emotions appropriately."
-  ]
-},
-  Happiness: {
-  items: 4,
-  likert: 7,
-  reverse: [4],
-  labels: [
-    "Strongly Disagree",
-    "Disagree",
-    "Slightly Disagree",
-    "Neutral",
-    "Slightly Agree",
-    "Agree",
-    "Strongly Agree"
-  ],
-  questions: [
-    "In general, I consider myself a happy person.",
-    "Compared to most of my peers, I consider myself happy.",
-    "Some people are generally very happy. They enjoy life regardless of what is going on. To what extent does this describe you?",
-    "Some people are generally not very happy. Although they are not depressed, they never seem as happy as they might be. To what extent does this describe you?"
-  ]
-},
-  Stress: {
-  items: 4,
-  likert: 5,
-  reverse: [2, 3],
-  labels: [
-    "Never",
-    "Almost Never",
-    "Sometimes",
-    "Fairly Often",
-    "Very Often"
-  ],
-  questions: [
-    "In the last month, how often have you felt that you were unable to control the important things in your life?",
-    "In the last month, how often have you felt confident about your ability to handle your personal problems?",
-    "In the last month, how often have you felt that things were going your way?",
-    "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?"
-  ]
-},
-  Motivation: {
-  items: 12,
-  likert: 7,
-  reverse: [],
-  labels: [
-    "Strongly Disagree",
-    "Disagree",
-    "Slightly Disagree",
-    "Neutral",
-    "Slightly Agree",
-    "Agree",
-    "Strongly Agree"
-  ],
-  questions: [
-    "Because I enjoy this work.",
-    "Because I believe this work is personally important.",
-    "Because I would feel guilty if I didn’t do it.",
-    "Because I am rewarded for doing this work.",
-    "I don’t know why I’m doing this work.",
-    "Because I find this work interesting.",
-    "Because I get pleasure from doing this work.",
-    "Because I would feel ashamed if I didn’t do it.",
-    "Because others expect me to do it.",
-    "I don’t really know why I’m doing this.",
-    "Because I value this work.",
-    "I feel I am wasting my time doing this."
-  ]
-}
-};
-  
-// ---------------- UTILITY ----------------
-
-function generateAnonId() {
-  const now = new Date();
-  const timestamp = now.toISOString().replace(/[-:.TZ]/g, "");
-  const random = Math.floor(1000 + Math.random() * 9000);
-  return `${timestamp}-${random}`;
-}
-
-// ================== UTILITY FUNCTIONS ==================
-
-function createNarrativeSection(title, icon, content) {
-  return `
-    <div class="summary-card">
-      <h3 class="summary-title">${icon} ${title}</h3>
-      <p class="summary-text">${content}</p>
-    </div>
-  `;
-}
-
-function createTestButton(testName, label, isCompleted = false) {
-  const completedClass = isCompleted ? 'completed' : '';
-  const completedIcon = isCompleted ? '✓ ' : '';
-  return `
-    <button onclick="startTest('${testName}')" class="test-button ${completedClass}">
-      ${completedIcon}${label}
-    </button>
-  `;
-}
-
-function formatProfileHeader(title, subtitle = '') {
-  return `
-    <div style="text-align: center; margin-bottom: 30px;">
-      <h2>${title}</h2>
-      ${subtitle ? `<p style="color: #666; font-style: italic;">${subtitle}</p>` : ''}
-    </div>
-  `;
-}
-
-function createBackButton(label = "Back to Dashboard") {
-  return `<button onclick="renderDashboard()">${label}</button>`;
-}
-
-// ================== CORE FUNCTIONS ==================
-
-function render(content) {
-  document.getElementById("app").innerHTML = `
-    <div class="card">${content}</div>
-  `;
-  // Auto-scroll to top after content change with slight delay
-  setTimeout(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, 100);
-}
-function persistSession() {
-  localStorage.setItem("mindpop_session", JSON.stringify(sessionState));
-}
-// ---------------- CONSENT ----------------
-
-function renderConsent() {
-  const header = formatProfileHeader(
-    "Welcome to MindPop", 
-    "Before We Begin"
-  );
-  
-  const content = `
-    <div style="max-width: 600px; margin: 0 auto; text-align: center;">
-      <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 25px;">
-        This check-in is designed to help you reflect on your wellbeing and patterns in a simple, supportive way.
-      </p>
-      
-      <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 25px;">
-        Your participation is voluntary. Your responses are kept confidential and used only for institutional wellbeing support.
-      </p>
-      
-      <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 35px;">
-        This is not a diagnosis, and it does not replace professional care.
-      </p>
-      
-      <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 35px;">
-        Please share your name and consent to continue.
-      </p>
-
-      <div style="text-align: center; margin-top: 30px;">
-        <button onclick="acceptConsent()" class="test-button" style="margin-right: 10px;">I Agree</button>
-        <button onclick="refuseConsent()" class="secondary">I Don't Agree</button>
-      </div>
-    </div>
-  `;
-  
-  render(header + content);
-}
-
-function acceptConsent() {
-  sessionState.anonId = generateAnonId();
-  persistSession();
-  renderDemographics();
-}
-function refuseConsent() {
-  const header = formatProfileHeader("🌸 Take Your Time", "Your Journey Begins When You're Ready");
-  
-  const content = `
-    <div style="max-width: 500px; margin: 0 auto; text-align: center;">
-      ${createNarrativeSection(
-        "Understanding Your Pace", 
-        "", 
-        `We understand that starting a journey of self-discovery is a personal choice, and timing matters. There's no rush — your wellbeing journey unfolds at its own perfect rhythm.`
-      )}
-      
-      ${createNarrativeSection(
-        "Always Here for You", 
-        "", 
-        `When you feel ready, this assessment will be here to support your exploration of wellbeing and growth. Consider this an open invitation, not an obligation.`
-      )}
-      
-      <p style="font-style: italic; color: #666; margin-top: 20px;">
-        "The journey of a thousand miles begins with a single step." 
-        Your step comes when you choose to take it.
-      </p>
-
-      <div style="margin-top: 30px; display: flex; justify-content: center; gap: 15px;">
-        <button onclick="renderConsent()" class="secondary">Reconsider</button>
-        <button onclick="acceptConsent()" class="test-button">I'm Ready</button>
-      </div>
-    </div>
-  `;
-  
-  render(header + content);
-}
-
-// ---------------- DEMOGRAPHICS ----------------
-
-function renderDemographics() {
-render(`
-
-<h2>Basic Details</h2>
-
-<div class="form-grid">
-
-  <div class="form-group">
-    <label>Name (Optional)</label>
-    <input type="text" id="name">
-  </div>
-<div class="form-group">
-  <label>Phone Number (Required)</label>
-  <input type="tel" id="phone" placeholder="Enter 10-digit number">
-</div>
-
-  <div class="form-group">
-    <label>Gender</label>
-    <select id="gender">
-      <option value="">Select</option>
-      <option>Male</option>
-      <option>Female</option>
-      <option>Other</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label>Department</label>
-    <select id="department">
-      <option value="">Select</option>
-      <option value="Humanities & Social Sciences">Humanities & Social Sciences</option>
-      <option value="Sciences">Sciences</option>
-      <option value="Paramedical Sciences">Paramedical Sciences</option>
-       <option value="Pharmaceutical Sciences">Pharmaceutical Sciences</option>
-      <option value="Engineering">Engineering</option>
-      <option value="Computer Technology">Computer Technology</option>
-      <option value="Nursing">Nursing</option>
-      <option value="Physiotherapy & Rehabilitation">Physiotherapy & Rehabilitation</option>
-      <option value="Commerce & Management">Commerce & Management</option>
-      <option value="Agriculture Sciences & Technology">Agriculture Sciences & Technology</option>
-      <option value="Non Teaching Staff">Non-Teaching Staff</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label>Pursuing</label>
-    <select id="pursuing" onchange="handlePursuingChange()">
-      <option value="">Select</option>
-      <option value="Undergraduate">Undergraduate</option>
-      <option value="Postgraduate">Postgraduate</option>
-      <option value="Faculty">Faculty</option>
-    </select>
-  </div>
-
-  <div class="form-group" id="yearContainer">
-    <label>Year</label>
-    <select id="year">
-      <option value="">Select</option>
-      <option>1st Year</option>
-      <option>2nd Year</option>
-      <option>3rd Year</option>
-      <option>4th Year</option>
-    </select>
-  </div>
-
-  <div class="form-group" id="facultyExperienceContainer" style="display:none;">
-    <label>Experience as Faculty</label>
-    <select id="facultyExperience">
-      <option value="">Select</option>
-      <option>0–2 Years</option>
-      <option>3–5 Years</option>
-      <option>6–10 Years</option>
-      <option>10+ Years</option>
-    </select>
-  </div>
-
-</div>
-
-<div class="form-actions">
-  <button onclick="saveDemographics()">Continue</button>
-</div>
-
-`);
-}
-
-function saveDemographics() {
-
-  const gender = document.getElementById("gender").value;
-  const department = document.getElementById("department").value;
-  const pursuing = document.getElementById("pursuing").value;
-  const year = document.getElementById("year").value;
-  const phone = document.getElementById("phone").value.trim();
-
-// Indian 10-digit validation
-const phoneRegex = /^[6-9]\d{9}$/;
-
-if (!phoneRegex.test(phone)) {
-    alert("Please enter a valid 10-digit phone number.");
-    return;
-}
-
-  if (!gender || !department || !pursuing) {
-    alert("Please complete all required fields.");
-    return;
-}
-
-if (pursuing !== "Faculty" && !year) {
-    alert("Please select Year.");
-    return;
-}
-
-  sessionState.demographics = {
-  name: document.getElementById("name").value,
-  phone: phone,
-  gender: document.getElementById("gender").value,
-  department: document.getElementById("department").value,
-  pursuing: document.getElementById("pursuing").value,
-  facultyExperience: document.getElementById("facultyExperience")?.value || "",
-  year: document.getElementById("year").value
-};
-  sessionState.anonId = phone + "_" + Date.now();
- persistSession();
-
-  renderDashboard();
-}
-
-// ---------------- DASHBOARD ----------------
-
-function renderDashboard() {
-    const completed = sessionState.completedTests.length;
-    const total = 5;
-
-    function createTestItem(testName, displayName, icon) {
-        const isDone = sessionState.completedTests.includes(testName);
-        const action = isDone ? `showTestResult('${testName}')` : `startTest('${testName}')`;
-        const buttonLabel = isDone ? 'View Results' : 'Start Test';
-        
-        return `
-            <div class="summary-card" style="cursor: pointer; display: flex; align-items: center; padding: 20px; gap: 20px; flex-wrap: wrap; box-sizing: border-box;" onclick="${action}">
-                <div style="font-size: 2.5rem; flex-shrink: 0; min-width: 60px; text-align: center;">${icon}</div>
-                <div style="flex: 1; min-width: 0; box-sizing: border-box;">
-                    <h4 style="margin: 0 0 5px 0; color: ${isDone ? '#28a745' : '#333'}; font-size: 1.1rem;">
-                        ${displayName} ${isDone ? '✓' : ''}
-                    </h4>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;">
-                        ${isDone ? 'Completed - Click to view results' : 'Not started - Click to begin'}
-                    </p>
-                </div>
-                <button class="${isDone ? 'secondary' : 'test-button'}" style="flex-shrink: 0; min-width: 120px; box-sizing: border-box;">
-                    ${buttonLabel}
-                </button>
-            </div>
-        `;
-    }
-
-    const header = formatProfileHeader(
-        "MindPop Assessment", 
-        "Choose an assessment to begin"
-    );
-
-    const content = `
-        <div style="display: flex; flex-direction: column; gap: 15px; margin: 30px 0; max-width: 100%; overflow: hidden;">
-            ${createTestItem("Personality", "Personality Profile", "🎭")}
-            ${createTestItem("Emotional_Intelligence", "Emotional Intelligence", "💝")}
-            ${createTestItem("Happiness", "Happiness Scale", "😊")}
-            ${createTestItem("Stress", "Stress Assessment", "🌊")}
-            ${createTestItem("Motivation", "Motivation Profile", "🔥")}
-        </div>
-
-        ${completed === total ? `
-            <div style="text-align: center; margin-top: 40px; padding: 25px; background: #f8f9fa; border-radius: 10px;">
-                <h4 style="color: #28a745; margin-bottom: 15px;">🎉 All Complete!</h4>
-                <p style="margin: 0;">You've completed all assessments.</p>
-                <button onclick="restartAssessment()" style="margin-top: 20px;" class="secondary">
-                    Start New Assessment
-                </button>
-            </div>
-        ` : ''}
-    `;
-
-    render(header + content);
-}
-
-// ---------------- TEST ENGINE ----------------
-
-function startTest(testName) {
-
-  const scale = scales[testName];
-
-  let questionsHTML = "";
-
-  scale.questions.forEach((q, index) => {
-
-    let options = "";
-
-    for (let i = 1; i <= scale.likert; i++) {
-      options += `
-    <div class="option-row">
-        <input type="radio"
-               id="q${index}_${i}"
-               name="q${index}"
-               value="${i}"
-               onclick="updateProgress(${scale.items})">
-        <label for="q${index}_${i}">
-            ${scale.labels[i - 1]}
-        </label>
-    </div>
-`;
-  }
-
-    questionsHTML += `
-      <div class="question-block">
-        <p><strong>${index + 1}. ${q}</strong></p>
-        ${options}
-      </div>
-    `;
-  });
-
-  render(`
-    <h2>${testName}</h2>
-
-    <div class="progress-bar">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
-
-    <form id="testForm">
-      ${questionsHTML}
-      <button type="button" onclick="submitTest('${testName}')">
-        Submit
-      </button>
-    </form>
-  `);
-}
-
-function updateProgress(total) {
-  const checked = document.querySelectorAll("input[type=radio]:checked");
-  const answered = new Set();
-  checked.forEach(r => answered.add(r.name));
-  const percent = (answered.size / total) * 100;
-  document.getElementById("progressFill").style.width = percent + "%";
-}
-
-// ---------------- SCORING ----------------
-
-function submitTest(testName) {
-
-    const scale = scales[testName];
-    const form = document.getElementById("testForm");
-    const data = new FormData(form);
-
-    let responses = [];
-    let missing = false;
-
-    // Collect responses
-    for (let i = 0; i < scale.items; i++) {
-        const val = data.get("q" + i);
-        if (!val) missing = true;
-        responses.push(Number(val));
-    }
-
-    if (missing) {
-        alert("Please answer all questions.");
-        return;
-    }
-
-    // Reverse scoring
-    scale.reverse.forEach(index => {
-        const idx = index - 1;
-        responses[idx] = (scale.likert + 1) - responses[idx];
-    });
-
-    // ======================
-    // PERSONALITY SCORING
-    // ======================
-    if (testName === "Personality") {
-
-        const traits = {
-            Extraversion: responses[0] + responses[5],
-            Agreeableness: responses[1] + responses[6],
-            Conscientiousness: responses[2] + responses[7],
-            Neuroticism: responses[3] + responses[8],
-            Openness: responses[4] + responses[9]
-        };
-
-        if (!sessionState.completedTests.includes("Personality")) {
-            sessionState.completedTests.push("Personality");
-        }
-
-       sessionState.results.Personality = {
-  raw: responses,
-  Extraversion: traits.Extraversion,
-  Agreeableness: traits.Agreeableness,
-  Conscientiousness: traits.Conscientiousness,
-  Neuroticism: traits.Neuroticism,
-  Openness: traits.Openness
-};
-      if (!sessionState.completedTests.includes(testName)) {
-    sessionState.completedTests.push(testName);
-}
-      persistSession();
-      sendToBackend();
-
-        renderPersonalityResult(traits);
-        return;
-    }
-
-    // ======================
-    // EMOTIONAL INTELLIGENCE
-    // ======================
-    if (testName === "Emotional_Intelligence") {
-
-        const totalEI = responses.reduce((a, b) => a + b, 0);
-
-        if (!sessionState.completedTests.includes("Emotional_Intelligence")) {
-            sessionState.completedTests.push("Emotional_Intelligence");
-        }
-
-       sessionState.results.Emotional_Intelligence = {
-   raw: responses,
-   total: totalEI
-};
-
-       const insight = getShortInsight(
-    "Emotional_Intelligence",
-    sessionState.results.Emotional_Intelligence
-);
-   let level = "";
-
-if (totalEI <= 25) level = "Lower Range";
-else if (totalEI <= 38) level = "Moderate Range";
-else level = "Higher Range";
-
-const interpretation = generateEINarrative(totalEI);
-
-      if (!sessionState.completedTests.includes(testName)) {
-    sessionState.completedTests.push(testName);
-}
-      persistSession();
-      sendToBackend();
-
-render(`
-<h2>Emotional Intelligence Profile</h2>
-
-<p style="margin-top:10px;">
-${interpretation}
-</p>
-
-<br><br>
-<button onclick="renderDashboard()">Do Another Test</button>
-`);
-    }
-
-  // ============================
-  // Happiness
-  // ============================
-  if (testName === "Happiness") {
-
-    const totalHappiness = responses.reduce((a, b) => a + b, 0);
-
-    if (!sessionState.completedTests.includes("Happiness")) {
-        sessionState.completedTests.push("Happiness");
-    }
-
-   sessionState.results.Happiness = {
-   raw: responses,
-   total: totalHappiness
-
+function freshSession() {
+  return {
+    schemaVersion: 3,
+    participantId: id(),
+    startedAt: new Date().toISOString(),
+    consent: { participate: false, dataUse: false, acceptedAt: "" },
+    profile: { name: "", faculty: "", role: "", year: "", gender: "" },
+    drafts: {},
+    results: {},
+    completedAt: ""
   };
-    const insight = getShortInsight("Happiness", sessionState.results.Happiness);
-
-let level = "";
-
-if (totalHappiness <= 12) level = "Lower Range";
-else if (totalHappiness <= 20) level = "Moderate Range";
-else level = "Higher Range";
-
-const interpretation = generateHappinessNarrative(totalHappiness);
-    if (!sessionState.completedTests.includes(testName)) {
-    sessionState.completedTests.push(testName);
-}
-    persistSession();
-    sendToBackend();
-
-render(`
-<h2>Subjective Happiness Profile</h2>
-
-<p style="margin-top:10px;">
-${interpretation}
-</p>
-
-<br><br>
-<button onclick="renderDashboard()">Do Another Test</button>
-`);
-    return;
-}
-  // =======================
-  // Perceive Stress Scale
-  // ======================
-  if (testName === "Stress") {
-
-    const totalStress = responses.reduce((a, b) => a + (b - 1), 0);
-
-    if (!sessionState.completedTests.includes("Stress")) {
-        sessionState.completedTests.push("Stress");
-    }
-
-   sessionState.results.Stress = {
-   raw: responses,
-   total: totalStress
-
-    };
-  const insight = getShortInsight("Stress", sessionState.results.Stress);
-
-let level = "";
-
-if (totalStress <= 4) level = "Low Stress";
-else if (totalStress <= 9) level = "Moderate Stress";
-else level = "Elevated Stress";
-
-const interpretation = generateStressNarrative(totalStress);
-    if (!sessionState.completedTests.includes(testName)) {
-    sessionState.completedTests.push(testName);
-}
-    persistSession();
-    sendToBackend();
-
-render(`
-<h2>Perceived Stress Profile</h2>
-
-<p style="margin-top:10px;">
-${interpretation}
-</p>
-
-<br><br>
-<button onclick="renderDashboard()">Do Another Test</button>
-`);
-
-
-    return;
-}
-  // =======================
-  // Motivation Scale
-  // =======================
-  if (testName === "Motivation") {
-
-    // SWEIMS 12 items
-    // Assume responses array length = 12
-    // 1–5 Likert scale
-
-    const intrinsic = responses[0] + responses[5] + responses[6];
-    const identified = responses[1] + responses[10];
-    const introjected = responses[2] + responses[7];
-    const external = responses[3] + responses[8];
-    const amotivation = responses[4] + responses[9] + responses[11];
-
-    // 🔹 Store results
-    if (!sessionState.completedTests.includes("Motivation")) {
-        sessionState.completedTests.push("Motivation");
-    }
-
-    sessionState.results.Motivation = {
-    raw: responses,
-    intrinsic,
-    identified,
-    introjected,
-    external,
-    amotivation
-};
-
-    // 🔹 Level Classification
-    function classifyMotivation(score) {
-        if (score <= 8) return "Low";
-        if (score <= 14) return "Moderate";
-        return "High";
-    }
-
-    const intrinsicLevel = classifyMotivation(intrinsic);
-    const amotivationLevel = classifyMotivation(amotivation);
-
-    // 🔹 Clinical Narrative
-   const narrative = generateMotivationNarrative(
-    sessionState.results.Motivation
-);
-    if (!sessionState.completedTests.includes(testName)) {
-    sessionState.completedTests.push(testName);
-}
-    persistSession();
-    sendToBackend();
-
-   render(`
-  <h2>Motivation Profile</h2>
-
-  <h3>Intrinsic Motivation</h3>
-  <p>${interpretIntrinsic(intrinsic)}</p>
-
-  <h3>Amotivation</h3>
-  <p>${interpretAmotivation(amotivation)}</p>
-
-  <br>
-  <p>${narrative}</p>
-
-  <br><br>
-  <button onclick="renderDashboard()">Do Another Test</button>
-`);
-
-    return;
-}
 }
 
-function showTestResult(testName) {
-
-    const r = sessionState.results;
-
-    if (testName === "Personality" && r.Personality) {
-        renderPersonalityResult(r.Personality);
-        return;
-    }
-
-    if (testName === "Emotional_Intelligence" && r.Emotional_Intelligence) {
-
-        const totalEI = r.Emotional_Intelligence.total;
-        const interpretation = generateEINarrative(totalEI);
-
-        render(`
-        <h2>Emotional Intelligence Profile</h2>
-        <p>${interpretation}</p>
-        <br>
-        <button onclick="renderDashboard()">Back to Dashboard</button>
-        `);
-        return;
-    }
-
-    if (testName === "Happiness" && r.Happiness) {
-
-        const total = r.Happiness.total;
-        const interpretation = generateHappinessNarrative(total);
-
-        render(`
-        <h2>Happiness Profile</h2>
-        <p>${interpretation}</p>
-        <br>
-        <button onclick="renderDashboard()">Back to Dashboard</button>
-        `);
-        return;
-    }
-
-    if (testName === "Stress" && r.Stress) {
-
-        const total = r.Stress.total;
-        const interpretation = generateStressNarrative(total);
-
-        render(`
-        <h2>Stress Profile</h2>
-        <p>${interpretation}</p>
-        <br>
-        <button onclick="renderDashboard()">Back to Dashboard</button>
-        `);
-        return;
-    }
-
-    if (testName === "Motivation" && r.Motivation) {
-
-    const intrinsic = r.Motivation.intrinsic;
-    const amotivation = r.Motivation.amotivation;
-
-    const narrative = generateMotivationNarrative(r.Motivation);
-
-    render(`
-        <h2>Motivation Profile</h2>
-
-        <h3>Intrinsic Motivation</h3>
-        <p>${interpretIntrinsic(intrinsic)}</p>
-
-        <h3>Amotivation</h3>
-        <p>${interpretAmotivation(amotivation)}</p>
-
-        <br>
-        <p>${narrative}</p>
-
-        <br><br>
-        <button onclick="renderDashboard()">Back to Dashboard</button>
-    `);
-
-    return;
-}
+function readSession() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (parsed && parsed.schemaVersion === 3 && parsed.participantId) return parsed;
+  } catch (_) {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+  return freshSession();
 }
 
-function interpretTrait(score) {
-  if (score <= 4) return "Low";
-  if (score <= 7) return "Moderate";
-  return "High";
+localStorage.removeItem("mindpop_session");
+localStorage.removeItem("mindpop_session_v2");
+localStorage.removeItem("mindpop_submission_queue_v2");
+let session = readSession();
+
+function persist() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 }
 
-function getShortInsight(testName, data) {
-
-    if (testName === "Happiness") {
-        if (data.total <= 14) {
-            return "Your responses suggest lower daily positive emotional experience. Small environmental or social shifts may meaningfully improve wellbeing.";
-        }
-        return "Your responses suggest generally stable positive wellbeing patterns.";
-    }
-
-    if (testName === "Stress") {
-        if (data.total >= 12) {
-            return "Your responses indicate elevated perceived stress. Monitoring workload and recovery routines may be helpful.";
-        }
-        return "Your responses suggest manageable perceived stress levels.";
-    }
-
-    if (testName === "Emotional_Intelligence") {
-        if (data.total <= 25) {
-            return "Emotional awareness skills may benefit from intentional development. These capacities are learnable and improvable.";
-        }
-        return "Your responses suggest adaptive emotional processing skills.";
-    }
-
-   if (testName === "Motivation") {
-
-    const { intrinsic, identified, introjected, external, amotivation } = data;
-
-    if (amotivation >= intrinsic && amotivation >= identified) {
-        return "Current motivation appears reduced or unclear. Reconnecting with meaningful goals may help.";
-    }
-
-    if (intrinsic >= identified && intrinsic >= external) {
-        return "Your motivation is largely interest-driven and internally sustained.";
-    }
-
-    if (identified >= intrinsic) {
-        return "You are motivated by personal goals and values.";
-    }
-
-    if (external >= intrinsic) {
-        return "External structure and expectations play an important role in your motivation.";
-    }
-
-    return "Your motivation appears mixed and context-dependent.";
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  })[char]);
 }
 
+function safeUrl(value) {
+  if (!value) return "";
+  try {
+    const url = new URL(value, window.location.origin);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch (_) {
     return "";
+  }
 }
 
-function renderPersonalityResult(traits) {
-
-  let resultHTML = `<h2>Personality Profile</h2>`;
-
-  // Filter out raw data - only show personality traits
-  const personalityTraits = {
-    Extraversion: traits.Extraversion,
-    Agreeableness: traits.Agreeableness,
-    Conscientiousness: traits.Conscientiousness,
-    Neuroticism: traits.Neuroticism,
-    Openness: traits.Openness
-  };
-
-  for (let trait in personalityTraits) {
-
-    const score = personalityTraits[trait];
-    const level = interpretTrait(score);
-
-    let interpretation = "";
-
-   if (trait === "Neuroticism") {
-    if (level === "High") {
-        interpretation = `
-        <h4>🌟 Emotional Sensitivity</h4>
-        <p>You experience emotions with beautiful depth and intensity, allowing deep connections with yourself and others.</p>
-        `;
-    }
-
-    else if (level === "Low") {
-        interpretation = `
-        <h4>🌊 Emotional Resilience</h4>
-        <p>You possess wonderful emotional balance and stability, navigating life's challenges with grace and inner peace.</p>
-        `;
-    }
-
-    else {
-        interpretation = `
-        <h4>🎭 Emotional Flexibility</h4>
-        <p>You flow beautifully with life's emotional rhythms, maintaining balance between awareness and regulation.</p>
-        `;
-    }
+function completed() {
+  return ORDER.filter((scaleId) => session.results[scaleId]);
 }
 
-    if (trait === "Extraversion") {
-    if (level === "High") {
-        interpretation = `
-        <h4>☀️ Social Energy</h4>
-        <p>You radiate beautiful social energy, lighting up rooms and creating natural connections with others.</p>
-        `;
-    }
-
-    else if (level === "Low") {
-        interpretation = `
-        <h4>🌙 Inner Wisdom</h4>
-        <p>You possess beautiful depth from honoring your inner world, reflecting profound insights and wisdom.</p>
-        `;
-    }
-
-    else {
-        interpretation = `
-        <h4>⚖️ Social Balance</h4>
-        <p>You've mastered the art of social balance, knowing when to engage and when to reflect.</p>
-        `;
-    }
-}
-    if (trait === "Conscientiousness") {
-    if (level === "High") {
-        interpretation = `
-        <h4>🏆 Dedication to Excellence</h4>
-        <p>You possess remarkable responsibility and commitment to excellence, taking pride in doing things well.</p>
-        `;
-    }
-
-    else if (level === "Low") {
-        interpretation = `
-        <h4>🎨 Creative Flexibility</h4>
-        <p>You dance to your own rhythm, thriving in unexpected situations with creative problem-solving skills.</p>
-        `;
-    }
-
-    else {
-        interpretation = `
-        <h4>⚖️ Balanced Approach</h4>
-        <p>You've found the sweet spot between structure and spontaneity, creating harmony in responsibilities.</p>
-        `;
-    }
+function allDone() {
+  return completed().length === ORDER.length;
 }
 
-    if (trait === "Agreeableness") {
-    if (level === "High") {
-        interpretation = `
-        <h4>💝 Heart of Compassion</h4>
-        <p>You radiate kindness and empathy, creating deep, meaningful connections and harmony in relationships.</p>
-        `;
-    }
-
-    else if (level === "Low") {
-        interpretation = `
-        <h4>🗡️ Commitment to Truth</h4>
-        <p>You possess courageous commitment to authenticity and principle, guiding others toward honesty.</p>
-        `;
-    }
-
-    else {
-        interpretation = `
-        <h4>🤝 Balanced Compassion</h4>
-        <p>You've mastered compassionate strength, balancing understanding with principled boundaries.</p>
-        `;
-    }
+function firstName() {
+  return (session.profile.name || "there").trim().split(/\s+/)[0];
 }
 
-    if (trait === "Openness") {
-    if (level === "High") {
-        interpretation = `
-        <h4>🌈 Creative Spirit</h4>
-        <p>Your mind is a universe of possibilities, seeing the world through wonder and curiosity.</p>
-        `;
-    }
-
-    else if (level === "Low") {
-        interpretation = `
-        <h4>🏔️ Grounded Wisdom</h4>
-        <p>You possess practical wisdom and stability, providing a foundation of reliability and clarity.</p>
-        `;
-    }
-
-    else {
-        interpretation = `
-        <h4>🌟 Balanced Curiosity</h4>
-        <p>You've found perfect balance between exploration and stability, nurturing growth while staying grounded.</p>
-        `;
-    }
+function draw(html, focus = true) {
+  app.innerHTML = '<div class="shell">' + html + "</div>";
+  document.querySelectorAll("[data-meter]").forEach((meter) => {
+    meter.style.width = Math.max(0, Math.min(100, Number(meter.dataset.meter))) + "%";
+  });
+  if (focus) {
+    requestAnimationFrame(() => {
+      app.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
 }
 
-    resultHTML += `
-        <div class="summary-card">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                <h3 class="summary-title" style="margin: 0;">${trait}</h3>
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 25px; font-weight: 600; font-size: 1rem; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
-                    ${level}
-                </div>
-            </div>
-            <p class="summary-text" style="margin-top: 0;">
-                ${interpretation}
-            </p>
+function go(name, data = {}) {
+  route = { name, ...data };
+  notice = "";
+  render();
+}
+
+function landingView() {
+  return `
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Five tiny check-ins. One clearer picture.</p>
+        <h1>Meet your mind, minus the clinical vibes.</h1>
+        <p class="lede">Explore personality, emotional skills, happiness, stress and motivation in about eight minutes. Finish all five to unlock a cute, shareable MindPop Mix.</p>
+        <button class="button" type="button" data-action="begin">Start my check-in <span aria-hidden="true">&rarr;</span></button>
+        <div class="hero-note"><span>Saved as you go</span><span>Instant reflections</span><span>Share card at 5/5</span></div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orbit"><div class="orbit-core">M</div></div>
+        <span class="spark spark-a">&#10022;</span><span class="spark spark-b">&#9728;</span><span class="spark spark-c">&#8599;</span>
+      </div>
+    </section>`;
+}
+
+function consentView() {
+  return `
+    <section class="panel">
+      <div class="panel-head">
+        <p class="eyebrow">Before we begin</p>
+        <h2>A quick, honest heads-up.</h2>
+        <p>This is a student wellbeing reflection, not a diagnosis. Your name is required by the institution, so your responses are identifiable.</p>
+      </div>
+      <ul class="consent-list">
+        <li><strong>1</strong><span>Each completed check-in is saved separately, so partial progress can still help if you stop before all five.</span></li>
+        <li><strong>2</strong><span>Your name, profile details and answers for that check-in may be sent to the institution after you finish it.</span></li>
+        <li><strong>3</strong><span>Participation remains voluntary. You can leave at any time or clear the copy stored on this device.</span></li>
+      </ul>
+      <form id="consent-form">
+        <label class="check-row"><input name="participate" type="checkbox" required><span>I choose to take part and understand these results are non-diagnostic.</span></label>
+        <label class="check-row"><input name="dataUse" type="checkbox" required><span>I understand my name, profile and each completed check-in may be saved for institutional wellbeing analysis.</span></label>
+        <div class="button-row">
+          <button class="button" type="submit">I understand, continue</button>
+          <button class="button secondary" type="button" data-action="home">Not now</button>
         </div>
-    `;
-}
-  const personalityNarrative = generatePersonalityNarrative(traits);
-
-resultHTML += `
-<br>
-<h3>Profile Interpretation</h3>
-<p>${personalityNarrative}</p>
-`;
-
-resultHTML += `
-  <br><br>
-  <button onclick="renderDashboard()">Do Another Test</button>
-`;
-
-  render(resultHTML);
+      </form>
+    </section>`;
 }
 
-function resetAssessment() {
-    sessionState.completedTests = [];
-    sessionState.results = {
-        Personality: null,
-        Emotional_Intelligence: null,
-        Happiness: null,
-        Stress: null,
-        Motivation: null
+const faculties = [
+  "Humanities & Social Sciences", "Sciences", "Allied and Healthcare Sciences",
+  "Pharmaceutical Sciences", "Engineering", "Computer Technology",
+  "Nursing", "Physiotherapy & Rehabilitation", "Commerce & Management",
+  "Agriculture Sciences & Technology", "Non-Teaching Staff"
+];
+const roles = ["Undergraduate", "Postgraduate", "Diploma", "PhD", "Faculty", "Staff"];
+
+function yearChoices(role) {
+  if (role === "Undergraduate") return ["Year 1", "Year 2", "Year 3", "Year 4"];
+  if (role === "Postgraduate" || role === "Diploma") return ["Year 1", "Year 2"];
+  return [];
+}
+
+function options(items, selected, placeholder = "Select one") {
+  return '<option value="">' + esc(placeholder) + "</option>" + items.map((item) =>
+    '<option value="' + esc(item) + '"' + (item === selected ? " selected" : "") + ">" + esc(item) + "</option>"
+  ).join("");
+}
+
+function profileView() {
+  const p = session.profile;
+  const years = yearChoices(p.role);
+  return `
+    <section class="panel">
+      <div class="panel-head">
+        <p class="eyebrow">One quick setup</p>
+        <h2>Tell us a little about you.</h2>
+        <p>These details help the institution understand wellbeing patterns across different student and staff groups.</p>
+      </div>
+      <form id="profile-form">
+        <div class="honeypot" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
+        <div class="form-grid">
+          <div class="field full">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" maxlength="80" autocomplete="name" value="${esc(p.name)}" required>
+            <small>Required by your institution and included with saved responses.</small>
+          </div>
+          <div class="field"><label for="faculty">Faculty of</label><select id="faculty" name="faculty" required>${options(faculties, p.faculty, "Choose a faculty")}</select></div>
+          <div class="field"><label for="role">I am a...</label><select id="role" name="role" required>${options(roles, p.role)}</select></div>
+          <div class="field" id="year-field"${years.length ? "" : " hidden"}>
+            <label for="year">Current year</label>
+            <select id="year" name="year"${years.length ? " required" : ""}>${options(years, p.year, "Choose your year")}</select>
+          </div>
+          <div class="field"><label for="gender">Gender</label><select id="gender" name="gender" required>${options(["Woman", "Man", "Non-binary", "Prefer to self-describe", "Prefer not to say"], p.gender)}</select></div>
+        </div>
+        <button class="button" type="submit">Show me the five check-ins</button>
+      </form>
+    </section>`;
+}
+
+function updateYearField(role) {
+  const field = document.getElementById("year-field");
+  const select = document.getElementById("year");
+  if (!field || !select) return;
+  const years = yearChoices(role);
+  const selected = years.includes(select.value) ? select.value : "";
+  field.hidden = years.length === 0;
+  select.required = years.length > 0;
+  select.disabled = years.length === 0;
+  select.innerHTML = options(years, selected, "Choose your year");
+}
+
+function scaleCard(scale) {
+  const done = Boolean(session.results[scale.id]);
+  const draft = session.drafts[scale.id] || [];
+  const answered = draft.filter((value) => value !== null && value !== undefined).length;
+  let status = scale.time;
+  let action = "Start";
+  if (done) {
+    const saved = session.results[scale.id].submissionStatus;
+    status = saved === "sent" ? "Saved" : saved === "saving" ? "Saving..." : "On device";
+    action = "View reflection";
+  }
+  else if (answered) { status = answered + "/" + scale.questions.length; action = "Keep going"; }
+  return `
+    <button class="scale-card ${done ? "done" : ""}" type="button" data-action="${done ? "result" : "scale"}" data-scale="${scale.id}">
+      <span class="scale-top"><span class="scale-icon">${scale.icon}</span><span class="status-pill">${status}</span></span>
+      <h3>${esc(scale.title)}</h3><p>${esc(scale.description)}</p><span class="card-action">${action} &rarr;</span>
+    </button>`;
+}
+
+function dashboardView() {
+  const count = completed().length;
+  return `
+    <section>
+      <div class="dashboard-head">
+        <div><p class="eyebrow">Hey ${esc(firstName())}</p><h2>${count ? "Nice momentum." : "Pick a place to start."}</h2><p>${count ? count + " of 5 complete. Each finished test is saved separately." : "Any order works. Most take a minute or two."}</p></div>
+        <div class="overall-progress"><strong>${count}/5 complete</strong><progress value="${count}" max="5">${count} of 5</progress></div>
+      </div>
+      <div class="scale-grid">
+        ${ORDER.map((scaleId) => scaleCard(scales[scaleId])).join("")}
+        <div class="unlock">
+          <div><h3>${allDone() ? "Your MindPop Mix is ready!" : "Finish all five to unlock your MindPop Mix"}</h3><p>${allDone() ? "Open a cute report you can save or share without your name or raw answers." : "Your share card is waiting. No pressure, just a little completion sparkle."}</p></div>
+          <button class="button ${allDone() ? "" : "secondary"}" type="button" data-action="summary" ${allDone() ? "" : "disabled"}>${allDone() ? "Open my report" : count + "/5 complete"}</button>
+        </div>
+      </div>
+    </section>`;
+}
+
+function questionView(scaleId, index) {
+  const scale = scales[scaleId];
+  if (!scale) return dashboardView();
+  const responses = session.drafts[scaleId] || Array(scale.questions.length).fill(null);
+  const selected = responses[index];
+  const answered = responses.filter((value) => value !== null && value !== undefined).length;
+  const choices = scale.optionsByQuestion ? scale.optionsByQuestion[index] : scale.options;
+  return `
+    <section class="question-shell">
+      <div class="question-top">
+        <button class="quiet-button" type="button" data-action="${index ? "previous" : "dashboard"}" aria-label="Go back">&larr; Back</button>
+        <div class="question-meta"><strong>${esc(scale.short)} &middot; ${index + 1} of ${scale.questions.length}</strong><progress value="${answered}" max="${scale.questions.length}">${answered} answered</progress></div>
+      </div>
+      <div class="question-card">
+        ${scale.prompt ? '<p class="question-prompt">' + esc(scale.prompt) + "</p>" : ""}
+        <h2>${esc(scale.questions[index])}</h2>
+        <div class="options" role="radiogroup" aria-label="Answer choices">
+          ${choices.map((option, optionIndex) => `
+            <button class="option ${selected === option.value ? "selected" : ""}" type="button" role="radio" aria-checked="${selected === option.value}" data-action="answer" data-scale="${scaleId}" data-index="${index}" data-value="${option.value}">
+              <span class="option-key">${optionIndex + 1}</span><span>${esc(option.label)}</span>
+            </button>`).join("")}
+        </div>
+      </div>
+      <div class="question-actions">
+        <button class="button secondary" type="button" data-action="dashboard">Save & exit</button>
+        ${index === scale.questions.length - 1 ? '<button class="button" type="button" data-action="finish" data-scale="' + scaleId + '"' + (selected === null || selected === undefined ? " disabled" : "") + ">See my reflection &rarr;</button>" : ""}
+      </div>
+    </section>`;
+}
+
+const labels = {
+  extraversion: "Social energy", agreeableness: "Cooperation", conscientiousness: "Structure",
+  emotionalReactivity: "Emotional reactivity", openness: "Openness", awareness: "Self-awareness",
+  selfManagement: "Self-management", empathy: "Empathy", intrinsic: "Enjoyment",
+  identified: "Personal value", introjected: "Inner pressure", external: "External pull", amotivation: "Disconnection"
+};
+
+function descriptor(value, low, high) {
+  if (value < low) return "Leans lower";
+  if (value > high) return "Leans higher";
+  return "Middle range";
+}
+
+function metric(label, value, min, max, display) {
+  const percent = ((value - min) / (max - min)) * 100;
+  return `<div class="metric"><div class="metric-head"><strong>${esc(label)}</strong><span>${esc(display || value)}</span></div><div class="meter"><div class="meter-fill" data-meter="${percent}"></div></div></div>`;
+}
+
+function resultModel(scaleId, result) {
+  const score = result.score;
+  if (scaleId === "personality") {
+    const ranked = Object.entries(score.domains).sort((a, b) => b[1] - a[1]);
+    const first = labels[ranked[0][0]].toLowerCase();
+    const second = labels[ranked[1][0]].toLowerCase();
+    return {
+      headline: "Your style is a mix, not a box.",
+      body: "Right now, " + first + " and " + second + " stand out most. Treat these as tendencies - not limits or fixed types.",
+      action: "Try noticing one moment this week when a different side of you shows up. Context changes how traits look.",
+      metrics: Object.entries(score.domains).map(([key, value]) => metric(labels[key], value, 1, 5, value + "/5"))
     };
-    renderDashboard();
-}
-
-function handlePursuingChange() {
-  const pursuing = document.getElementById("pursuing").value;
-
-  const yearContainer = document.getElementById("yearContainer");
-  const facultyContainer = document.getElementById("facultyExperienceContainer");
-
-  if (pursuing === "Faculty") {
-    yearContainer.style.display = "none";
-    facultyContainer.style.display = "block";
-  } else {
-    yearContainer.style.display = "block";
-    facultyContainer.style.display = "none";
   }
-}
-
-function generatePersonalityNarrative(traits) {
-
-    const E = traits.Extraversion;
-    const A = traits.Agreeableness;
-    const C = traits.Conscientiousness;
-    const N = traits.Neuroticism;
-    const O = traits.Openness;
-
-    let message = "";
-
-    // 🌟 Extraversion
-    if (E >= 8) {
-        message += "You likely feel energized when interacting with others and may enjoy being part of active, engaging environments. ";
-    } else if (E <= 4) {
-        message += "You may prefer quieter settings and meaningful one-to-one conversations rather than large social gatherings. ";
-    } else {
-        message += "You seem comfortable balancing social interaction with personal space. ";
-    }
-
-    // 🌟 Agreeableness
-    if (A >= 8) {
-        message += "You probably value harmony and try to be understanding toward others. ";
-    } else if (A <= 4) {
-        message += "You may prioritize honesty and independence, even if that means disagreeing when needed. ";
-    } else {
-        message += "You seem able to balance empathy with standing your ground. ";
-    }
-
-    // 🌟 Conscientiousness
-    if (C >= 8) {
-        message += "You appear organized and responsible, likely taking your commitments seriously. ";
-    } else if (C <= 4) {
-        message += "You might prefer flexibility over strict structure and may work best when given freedom rather than rigid rules. ";
-    } else {
-        message += "You likely manage responsibilities reasonably well while staying adaptable. ";
-    }
-
-    // 🌟 Neuroticism (softened wording)
-    if (N >= 8) {
-        message += "You may feel emotions quite deeply at times, especially under pressure. This sensitivity can feel intense, but it can also make you perceptive and emotionally aware. ";
-    } else if (N <= 4) {
-        message += "You generally seem steady and calm, even when things get stressful. ";
-    } else {
-        message += "You probably experience emotions in a fairly balanced and typical way. ";
-    }
-
-    // 🌟 Openness
-    if (O >= 8) {
-        message += "You seem curious and open to exploring new ideas, perspectives, and experiences. ";
-    } else if (O <= 4) {
-        message += "You may prefer practical approaches and familiar routines over constant change. ";
-    } else {
-        message += "You likely appreciate both new experiences and stable routines. ";
-    }
-
-    message += "Remember, personality describes tendencies — not limits. You can adapt and grow in any direction you choose.";
-
-    return message;
-}
-function generateEINarrative(totalEI) {
-
-    let message = "";
-
-    if (totalEI <= 25) {
-
-        message = `
-        <h4>🌱 Growing Your Emotional Garden</h4>
-        <p>You're on a beautiful journey of emotional discovery, and like any garden, emotional awareness takes time to cultivate. Be patient and kind with yourself as you learn to navigate the rich landscape of your feelings.</p>
-        
-        <p>Right now, emotions might sometimes feel like a complex puzzle, especially when stress clouds the picture. This isn't a struggle—it's an opportunity to develop incredible skills that will serve you throughout life.</p>
-        
-        <p><strong>Gentle practices:</strong> Try pausing to name what you're feeling, even if it's just "uncomfortable" or "confused." Each moment of awareness is like planting a seed of emotional wisdom.</p>
-        
-        <p>Remember: emotional intelligence isn't fixed—it's a skill you're building, one experience at a time. You're exactly where you need to be on this journey.</p>
-        `;
-
-    } else if (totalEI <= 38) {
-
-        message = `
-        <h4>🌿 Your Emerging Emotional Wisdom</h4>
-        <p>You're developing a beautiful relationship with your emotions! Like a skilled gardener, you're learning to work with your feelings rather than against them, creating a balanced emotional ecosystem.</p>
-        
-        <p>Most days, you likely navigate your emotional world with growing confidence. You're building the skills to understand what you feel and respond thoughtfully, even when emotions run high.</p>
-        
-        <p><strong>Your strength:</strong> You're finding that sweet spot between feeling deeply and responding wisely. This balance is rare and precious, and it's serving you well in relationships and challenges.</p>
-        
-        <p>Continue nurturing this awareness—each emotional conversation you have with yourself deepens your wisdom and strengthens your emotional resilience.</p>
-        `;
-
-    } else {
-
-        message = `
-        <h4>🌳 Your Emotional Mastery</h4>
-        <p>You possess remarkable emotional wisdom! Like an ancient tree with deep roots, you've developed a strong foundation of emotional awareness that weathers life's storms with grace.</p>
-        
-        <p>Your ability to understand, honor, and work with your emotions is a true gift. You don't just manage feelings—you collaborate with them, using their energy and information to make wise decisions and build meaningful connections.</p>
-        
-        <p><strong>Your superpower:</strong> You can sit with discomfort without being consumed by it, and you can transform challenging emotions into opportunities for growth. This emotional alchemy serves you in all aspects of life.</p>
-        
-        <p>Continue sharing this gift with others—your emotional wisdom creates ripples of healing and understanding in the world around you.</p>
-        `;
-    }
-
-    return message;
-}
-function generateHappinessNarrative(totalHappiness) {
-
-    let message = "";
-
-    if (totalHappiness <= 12) {
-
-        message = `
-        <h4>🌤️ Finding Your Light</h4>
-        <p>Right now, life might feel a bit gray, and that's okay. Even the brightest skies have cloudy days, and your feelings are valid and normal. You're not broken—you're human.</p>
-        
-        <p>This period of lower happiness isn't a permanent state; it's a season. Like winter, it serves a purpose—perhaps it's calling you to rest, reflect, or rediscover what truly matters to you.</p>
-        
-        <p><strong>Gentle invitations:</strong> Small moments of joy can be powerful—a warm cup of tea, a walk in nature, a conversation with a friend, or simply allowing yourself to rest without guilt.</p>
-        
-        <p>Be patient with yourself. Happiness isn't a destination you've failed to reach—it's a natural rhythm that ebbs and flows. You're exactly where you need to be.</p>
-        `;
-
-    } else if (totalHappiness <= 20) {
-
-        message = `
-        <h4>⛅️ Your Balanced Sunshine</h4>
-        <p>You've found a beautiful balance in life! Like a sky with both sun and clouds, your happiness has a natural rhythm that includes both bright moments and gentle shadows.</p>
-        
-        <p>This balance is actually a sign of emotional health—you can feel joy while also acknowledging life's challenges. You're not chasing constant happiness, but rather embracing life's full spectrum.</p>
-        
-        <p><strong>Your wisdom:</strong> You understand that happiness isn't about eliminating difficult feelings, but about building resilience to navigate all experiences with grace.</p>
-        
-        <p>Continue nurturing what brings you genuine joy and meaning. Your balanced approach to wellbeing creates sustainable happiness that weathers life's changes.</p>
-        `;
-
-    } else {
-
-        message = `
-        <h4>☀️ Your Radiant Joy</h4>
-        <p>You radiate a beautiful sense of joy and contentment! Like sunshine, your happiness warms everything around you and creates positive energy that others can feel.</p>
-        
-        <p>This isn't just about feeling good—it's about deep satisfaction and meaning. You've likely cultivated relationships, activities, and perspectives that nourish your soul and align with your values.</p>
-        
-        <p><strong>Your gift:</strong> Your happiness creates ripples of positivity in your relationships and communities. Your joy is contagious and inspiring, making the world a little brighter simply by being in it.</p>
-        
-        <p>Continue sharing your light while also honoring all your feelings. True happiness includes space for the full range of human emotion, and your wisdom shows in this balance.</p>
-        `;
-    }
-
-    return message;
-}
-
-function generateStressNarrative(totalStress) {
-
-    let message = "";
-
-    if (totalStress <= 4) {
-
-        message = `
-        <h4>🌊 Your Calm Waters</h4>
-        <p>You're navigating life's waters with beautiful grace! Like a peaceful lake, you've found ways to stay centered even when life creates ripples around you.</p>
-        
-        <p>This doesn't mean life is perfect—it means you've developed wonderful coping strategies that serve you well. You understand that stress is natural, but you don't let it overwhelm your inner peace.</p>
-        
-        <p><strong>Your wisdom:</strong> You know that prevention is better than cure. By maintaining routines that recharge you—rest, meaningful connections, and moments of joy—you keep your stress levels manageable.</p>
-        
-        <p>Continue honoring these practices; they're the foundation of your resilience and wellbeing.</p>
-        `;
-
-    } else if (totalStress <= 9) {
-
-        message = `
-        <h4>⛵️ Navigating Moderate Waves</h4>
-        <p>You're experiencing the normal ebb and flow of life's challenges. Like a skilled sailor, you're learning to navigate moderate waves while keeping your ship steady.</p>
-        
-        <p>This level of stress is actually a sign that you're engaging with life—taking on challenges, pursuing goals, and growing. Sometimes the waters get a bit choppy, but you're managing to stay on course.</p>
-        
-        <p><strong>Your opportunity:</strong> This is a perfect time to strengthen your stress-management toolkit. Small habits—brief pauses, deep breaths, or structured planning—can make these waves feel more manageable.</p>
-        
-        <p>Remember: stress isn't your enemy; it's a signal. Learning to listen to these signals helps you navigate life's beautiful journey with wisdom.</p>
-        `;
-
-    } else {
-
-        message = `
-        <h4>🌪️ Weathering the Storm</h4>
-        <p>Right now, life might feel like you're in the middle of a storm, and that's okay. Even the strongest ships face rough seas, and your feelings are completely valid.</p>
-        
-        <p>This period of high stress isn't a sign of weakness—it's a sign that you've been carrying so much for so long. Your system is asking for the care and attention you so readily give to others.</p>
-        
-        <p><strong>Gentle reminder:</strong> You don't have to weather this storm alone. Reaching out for support, setting boundaries, or simply allowing yourself to rest isn't giving up—it's gathering strength.</p>
-        
-        <p>This storm will pass. In the meantime, be incredibly kind to yourself. You're doing the best you can with incredibly challenging circumstances.</p>
-        `;
-    }
-
-    return message;
-}
-function generateMotivationNarrative(data) {
-
-    const { intrinsic, identified, introjected, external, amotivation } = data;
-
-    let message = "";
-
-    // 🔻 Amotivation dominant
-    if (amotivation >= intrinsic && amotivation >= identified) {
-
-        message = `
-        <h4>🌫️ Finding Your Way</h4>
-        <p>You're moving through a fog of disconnection, but this pause invites reflection and rediscovery of purpose.</p>
-        `;
-    }
-
-    // 🔻 Intrinsic dominant
-    else if (intrinsic >= identified && intrinsic >= external) {
-
-        message = `
-        <h4>🔥 Inner Fire</h4>
-        <p>You're blessed with internal motivation, driven by genuine interest and joy in what you do.</p>
-        `;
-    }
-
-    // 🔻 Identified dominant
-    else if (identified >= intrinsic) {
-
-        message = `
-        <h4>🎯 Purpose-Driven Path</h4>
-        <p>You walk a beautiful path of purpose, seeing how tasks connect to your bigger picture and values.</p>
-        `;
-    }
-
-    // 🔻 External dominant
-    else if (external >= intrinsic) {
-
-        message = `
-        <h4>⚡ Responsive Energy</h4>
-        <p>You respond wonderfully to external cues, performing best with clear direction and structure.</p>
-        `;
-    }
-
-    // 🔻 Mixed patterns
-    else {
-
-        message = `
-        <h4>🌈 Motivational Symphony</h4>
-        <p>You draw from multiple motivation sources, adapting beautifully to different situations and needs.</p>
-        `;
-    }
-
-    return message;
-}
-function interpretIntrinsic(score) {
-
-  if (score >= 8) {
-    return `
-    <h4>🔥 Your Inner Flame</h4>
-    <p>You're driven by a beautiful inner flame! When something captures your interest and feels meaningful, effort flows naturally and joyfully.</p>
-    
-    <p>This intrinsic motivation is your superpower—it creates sustainable energy and deep satisfaction in everything you pursue.</p>
-    
-    <p>Continue following what lights you up; your inner wisdom guides you toward meaningful growth and fulfillment.</p>
-    `;
+  if (scaleId === "emotionalSkills") {
+    const value = score.average;
+    const copy = value < 2.8
+      ? ["This looks like a skill-building moment.", "Try a ten-second pause: name the feeling, name what triggered it, then choose the next move."]
+      : value < 3.8
+        ? ["You are catching a fair amount of what is happening emotionally.", "When a feeling gets loud, ask: what is it trying to protect or point out?"]
+        : ["You report a strong read on emotions - your own and other people's.", "Use that awareness gently: understanding a feeling does not mean you have to fix it immediately."];
+    return { headline: copy[0], body: "Your overall reflection average is " + value + " out of 5. This is an informal skills check, not a validated EI score.", action: copy[1], metrics: Object.entries(score.domains).map(([key, v]) => metric(labels[key], v, 1, 5, v + "/5")) };
   }
-
-  if (score >= 14) {
-    return `
-    <h4>⚡ Your Spark of Interest</h4>
-    <p>You have a lovely spark of intrinsic motivation! When you find something interesting, you naturally want to engage and explore.</p>
-    
-    <p>This interest-driven energy serves you well, creating moments of genuine engagement and learning.</p>
-    
-    <p>Continue nurturing your curiosity and allowing yourself to follow what fascinates you.</p>
-    `;
+  if (scaleId === "happiness") {
+    const value = score.average;
+    const copy = value < 3.5
+      ? ["Life may feel a little muted right now.", "Pick one tiny thing that usually makes the day 2% better and make room for it - not as a cure, just as care."]
+      : value < 5.3
+        ? ["There is a steady mix of bright and difficult moments.", "Write down one good moment tonight and what helped it happen. Patterns are easier to repeat when you can see them."]
+        : ["You are reporting a strong sense of happiness overall.", "Notice what is supporting that feeling - people, routines, places or purpose - and protect a little space for it."];
+    return { headline: copy[0], body: "Your Subjective Happiness Scale average is " + value + " out of 7. It is a snapshot, not a verdict on your life.", action: copy[1], metrics: [metric("Subjective happiness", value, 1, 7, value + "/7")] };
   }
+  if (scaleId === "stress") {
+    const value = score.total;
+    const copy = value <= 5
+      ? ["Things seem fairly manageable at the moment.", "Keep one recovery habit on purpose this week - even when you feel fine."]
+      : value <= 10
+        ? ["There is some real pressure in the mix.", "Choose one task to make smaller: define the next ten-minute step instead of holding the whole problem at once."]
+        : ["Your answers suggest life has felt heavily loaded.", "Tell one trusted person what has been piling up. Support works better before everything becomes urgent."];
+    return { headline: copy[0], body: "Your PSS-4 total is " + value + " out of 16. The PSS has no diagnostic cutoffs, so this is described, not labelled.", action: copy[1], support: value >= 11, metrics: [metric("Perceived stress", value, 0, 16, value + "/16")] };
+  }
+  const top = labels[score.dominant].toLowerCase();
+  const next = labels[score.runnerUp].toLowerCase();
+  const disconnected = score.dominant === "amotivation";
+  return {
+    headline: disconnected ? "Your motivation may need a reset, not a lecture." : "Your strongest pull is " + top + ".",
+    body: disconnected ? "Disconnection is showing up most strongly, with " + next + " next. That can happen when effort and meaning drift apart." : "Your next strongest pull is " + next + ". Motivation is usually a blend, and it can change by subject or situation.",
+    action: disconnected ? "Shrink the goal until the first step feels almost too easy, then reconnect it to one reason that matters to you." : "Before the next task, say the reason out loud: I am doing this because... The answer can reveal what kind of support you need.",
+    metrics: Object.entries(score.domains).map(([key, value]) => metric(labels[key], value, 1, 7, value + "/7"))
+  };
+}
 
+function deeperNarrative(scaleId, result) {
+  const score = result.score;
+  if (scaleId === "personality") {
+    const top = Object.entries(score.domains).sort((a, b) => b[1] - a[1])[0][0];
+    const stories = {
+      extraversion: "You may recharge through people, conversation and visible momentum. Quiet time can still matter; social energy is simply a noticeable part of your mix.",
+      agreeableness: "You may naturally notice other people's needs and prefer cooperation. A kind boundary can help that warmth stay sustainable.",
+      conscientiousness: "Structure, preparation and finishing things may come fairly naturally. On difficult weeks, a smaller plan can work better than expecting perfect consistency.",
+      emotionalReactivity: "Your answers suggest emotions may feel especially vivid or quick to arrive. Naming the feeling can create a little space before the next move.",
+      openness: "New ideas, imagination and variety may energise you. Turning one interesting idea into a tiny action can keep curiosity from becoming overload."
+    };
+    return stories[top];
+  }
+  if (scaleId === "emotionalSkills") {
+    const sorted = Object.entries(score.domains).sort((a, b) => b[1] - a[1]);
+    return "Your strongest area is " + labels[sorted[0][0]].toLowerCase() + ", while " + labels[sorted[sorted.length - 1][0]].toLowerCase() + " may be the most useful place to practise. Neither is fixed.";
+  }
+  if (scaleId === "happiness") {
+    if (score.average >= 5) return "There is a solid positive signal here. It does not erase hard days; it suggests satisfaction or enjoyment is fairly available overall.";
+    if (score.average <= 3) return "Life may feel flat or heavy lately. Treat this as a prompt for care and connection, not as a verdict about you.";
+    return "Your result sits in a mixed zone: there may be good moments alongside real strain. Both can be true at once.";
+  }
+  if (scaleId === "stress") {
+    if (score.total >= 11) return "Several demands may be competing for more energy than you currently have. Reducing one load and telling someone can be more useful than pushing through alone.";
+    if (score.total <= 5) return "Things feel relatively manageable right now. This is a good time to notice which routines and people are helping you stay steady.";
+    return "Pressure is present but not at the highest end. A little recovery and a clearer next step may prevent it from stacking up.";
+  }
+  const stories = {
+    intrinsic: "Interest and enjoyment seem to be doing much of the pulling. Choice and variety may help that energy last.",
+    identified: "You are often moved by personal meaning and long-term value. Making that purpose visible can help on boring days.",
+    introjected: "Guilt or self-pressure may be carrying part of the workload. A kinder reason and a smaller target can make motivation less exhausting.",
+    external: "Expectations, rewards or consequences may be doing much of the pushing. Finding one reason that belongs to you can add staying power.",
+    amotivation: "The why may feel blurry right now. That can happen with burnout or disconnection; begin with one achievable step and ask for support if it persists."
+  };
+  return stories[score.dominant];
+}
+
+function saveStatusBlock(result) {
+  if (result.submissionStatus === "sent") return '<p class="notice success">Saved to the institution. You can safely continue or come back later.</p>';
+  if (result.submissionStatus === "saving") return '<p class="notice">Saving this completed check-in...</p>';
+  return '<p class="notice">Saved on this device and queued until a secure submission endpoint is available.</p>';
+}
+
+function supportBlock() {
+  const url = safeUrl(config.supportUrl);
+  return `<div class="support-card"><h3>A little support could help</h3><p>A high stress reflection is not a diagnosis, but you do not have to carry pressure alone.</p>${url ? '<a class="button secondary" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(config.supportLabel || "Find support") + "</a>" : "<p><strong>" + esc(config.supportLabel || "Contact your campus wellbeing team") + "</strong></p>"}</div>`;
+}
+
+function resultView(scaleId) {
+  const scale = scales[scaleId];
+  const result = session.results[scaleId];
+  if (!scale || !result) return dashboardView();
+  const model = resultModel(scaleId, result);
   return `
-  <h4>🌱 Growing Your Inner Garden</h4>
-  <p>Your intrinsic motivation is like a garden waiting to bloom. Sometimes the seeds of interest are there, but they need the right conditions to grow.</p>
-  
-  <p>This is a beautiful opportunity to explore what might spark your curiosity and passion. Small experiments with new activities or deeper reflection on your values can help your inner garden flourish.</p>
-  
-  <p>Be patient with yourself—motivation grows through exploration and discovery.</p>
-  `;
+    <section class="result-wrap">
+      <div class="result-hero"><p class="eyebrow">${esc(scale.title)} &middot; complete</p><h1>${esc(model.headline)}</h1><p>${esc(model.body)}</p></div>
+      ${saveStatusBlock(result)}
+      <div class="metric-grid">${model.metrics.join("")}</div>
+      <div class="insight"><h3>What this may look like</h3><p>${esc(deeperNarrative(scaleId, result))}</p><p class="insight-action"><strong>Try this:</strong> ${esc(model.action)}</p></div>
+      ${model.support ? supportBlock() : ""}
+      <p class="notice">Scoring basis: ${esc(scale.source)}. Results are descriptive and non-diagnostic.</p>
+      <div class="button-row"><button class="button" type="button" data-action="dashboard">Back to the five</button>${allDone() ? '<button class="button secondary" type="button" data-action="summary">See my MindPop Mix</button>' : ""}</div>
+    </section>`;
 }
-function interpretAmotivation(score) {
 
-  if (score >= 8) {
-    return `
-    <h4>🌫️ Navigating the Fog</h4>
-    <p>Right now, you might be moving through a fog of disconnection, and that's completely okay. Even the most motivated people sometimes lose their sense of direction.</p>
-    
-    <p>This isn't a failure—it's an invitation to pause, reflect, and rediscover what truly matters to you.</p>
-    
-    <p>Be gentle with yourself. Sometimes the most powerful motivation emerges after a period of rest and renewal.</p>
-    `;
-  }
+function combinedNarrative() {
+  const personality = resultModel("personality", session.results.personality);
+  const emotional = resultModel("emotionalSkills", session.results.emotionalSkills);
+  const happiness = session.results.happiness.score.average;
+  const stress = session.results.stress.score.total;
+  const motivation = labels[session.results.motivation.score.dominant].toLowerCase();
+  const balance = stress >= 11
+    ? "Your system may be asking for less load and more support."
+    : stress <= 5
+      ? "Your stress signal looks fairly manageable right now."
+      : "There is some pressure in the mix, so recovery still deserves a calendar slot.";
+  return firstName() + ", " + personality.headline.toLowerCase() + " " + emotional.headline + " Happiness is " + happiness + "/7, while " + motivation + " is your strongest motivation signal. " + balance;
+}
 
-  if (score >= 14) {
-    return `
-    <h4>☁️ Light Cloud Cover</h4>
-    <p>You're experiencing some light cloud cover in your motivation. The sun is still there, but sometimes clouds obscure its warmth.</p>
-    
-    <p>This is a normal part of life's rhythm. Your motivation isn't gone—it's just resting or waiting for the right conditions.</p>
-    
-    <p>Small steps and gentle self-compassion can help the clouds clear naturally.</p>
-    `;
-  }
-
+function summaryView() {
+  if (!allDone()) return dashboardView();
+  const rows = ORDER.map((scaleId) => {
+    const scale = scales[scaleId];
+    const model = resultModel(scaleId, session.results[scaleId]);
+    return `<div class="vibe-item"><span class="vibe-icon">${scale.icon}</span><div><strong>${esc(scale.short)}</strong><p>${esc(model.headline)}</p></div></div>`;
+  }).join("");
+  const sent = Object.values(session.results).filter((result) => result.submissionStatus === "sent").length;
   return `
-  <h4>☀️ Your Inner Light</h4>
-  <p>Your inner light is shining brightly! You generally feel connected to your activities and find meaning in what you do.</p>
-  
-  <p>This sense of purpose and engagement is a beautiful foundation that serves you well in all your endeavors.</p>
-  
-  <p>Continue honoring what brings you this sense of connection and flow.</p>
-  `;
-}
-function restartAssessment() {
-  localStorage.removeItem("mindpop_session");
-  location.reload();
+    <section class="result-wrap">
+      <div class="vibe-report">
+        <span class="vibe-badge">5/5 COMPLETE &#10022;</span>
+        <p class="vibe-kicker">My MindPop Mix</p>
+        <h1>Self-awareness, but make it cute.</h1>
+        <p class="vibe-story">${esc(combinedNarrative())}</p>
+        <div class="vibe-grid">${rows}</div>
+        <p class="vibe-foot">A reflection, not a diagnosis. Generated by MindPop.</p>
+      </div>
+      <div class="save-summary"><strong>Your five check-ins are complete.</strong><p>${sent} sent securely &middot; ${5 - sent} saved on this device or queued. The share image leaves out your name and raw answers.</p></div>
+      ${notice ? '<p class="notice success">' + esc(notice) + "</p>" : ""}
+      <div class="button-row report-actions">
+        <button class="button" type="button" data-action="share-report">Share or save my report</button>
+        <button class="button secondary" type="button" data-action="download">Download my private data</button>
+        <button class="button secondary" type="button" data-action="dashboard">Back to dashboard</button>
+      </div>
+    </section>`;
 }
 
-function sendToBackend() {
+function privacyView() {
+  const policy = safeUrl(config.privacyUrl);
+  return `
+    <section class="panel">
+      <div class="panel-head"><p class="eyebrow">Privacy in plain language</p><h2>Your answers belong to you.</h2></div>
+      <div class="privacy-copy">
+        <h3>What this app collects</h3><p>Your required name, faculty, role, applicable year, gender, answers, calculated scores and completion times. Because a name is collected, this is identifiable data.</p>
+        <h3>When data is sent</h3><p>After consent, every completed check-in is prepared as its own saved record. If a secure endpoint is configured it is sent immediately; otherwise it remains queued on this device. Unfinished answers stay on this device.</p>
+        <h3>What sharing includes</h3><p>The optional report image contains broad result headlines only. It excludes your name, profile details and raw answers by default. You decide whether to share it.</p>
+        <h3>Important limit</h3><p>A browser cannot hide a Google Apps Script URL or secret. Production submissions must use a protected server-side proxy with validation, rate limits and access controls.</p>
+        <h3>Your choice</h3><p>You may stop at any time. Clearing this device removes its local copy, but cannot recall records already received by the institution.</p>
+        ${policy ? '<p><a href="' + esc(policy) + '" target="_blank" rel="noopener noreferrer">Read the full institutional privacy policy</a></p>' : ""}
+      </div>
+      <div class="danger-zone"><button class="button danger" type="button" data-action="clear">Delete my local data</button></div>
+      <div class="button-row"><button class="button secondary" type="button" data-action="close-privacy">Go back</button></div>
+    </section>`;
+}
 
-  fetch(WEB_APP_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+function render() {
+  if (route.name === "consent") return draw(consentView());
+  if (route.name === "profile") return draw(profileView());
+  if (route.name === "dashboard") return draw(dashboardView());
+  if (route.name === "question") return draw(questionView(route.scaleId, route.index));
+  if (route.name === "result") return draw(resultView(route.scaleId));
+  if (route.name === "summary") return draw(summaryView());
+  if (route.name === "privacy") return draw(privacyView());
+  draw(landingView());
+}
+
+function startScale(scaleId) {
+  const scale = scales[scaleId];
+  if (!scale) return;
+  if (!session.drafts[scaleId]) session.drafts[scaleId] = Array(scale.questions.length).fill(null);
+  const firstOpen = session.drafts[scaleId].findIndex((value) => value === null || value === undefined);
+  persist();
+  go("question", { scaleId, index: firstOpen < 0 ? 0 : firstOpen });
+}
+
+function finishScale(scaleId) {
+  const scale = scales[scaleId];
+  const responses = session.drafts[scaleId];
+  if (!scale || !responses || responses.some((value) => value === null || value === undefined)) {
+    notice = "Please answer every question before finishing.";
+    return render();
+  }
+  session.results[scaleId] = {
+    responses: [...responses],
+    score: scale.score(responses),
+    completedAt: new Date().toISOString(),
+    submissionId: id(),
+    submissionStatus: "saving"
+  };
+  delete session.drafts[scaleId];
+  if (allDone() && !session.completedAt) session.completedAt = new Date().toISOString();
+  persist();
+  go("result", { scaleId });
+  void sendProgress(scaleId);
+}
+
+function progressPayload(scaleId) {
+  const result = session.results[scaleId];
+  return {
+    recordType: "assessment-progress",
+    schemaVersion: 3,
+    appVersion: APP_VERSION,
+    submissionId: result.submissionId,
+    participantId: session.participantId,
+    consentedAt: session.consent.acceptedAt,
+    startedAt: session.startedAt,
+    profile: { ...session.profile },
+    assessment: {
+      id: scaleId,
+      source: scales[scaleId].source,
+      responses: [...result.responses],
+      score: result.score,
+      completedAt: result.completedAt
     },
-    mode: "no-cors",
-    body: JSON.stringify(sessionState)
-  })
-  .then(() => {
-    console.log("Data sent to backend (no-cors mode)");
-  })
-  .catch(err => {
-    console.error("Backend error:", err);
+    progress: { completed: completed().length, total: ORDER.length, isComplete: allDone() },
+    client: { language: navigator.language, timezoneOffsetMinutes: new Date().getTimezoneOffset() }
+  };
+}
+
+function readQueue() {
+  try {
+    const queue = JSON.parse(localStorage.getItem(QUEUE_KEY));
+    return Array.isArray(queue) ? queue : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function queueSubmission(data) {
+  const queue = readQueue().filter((item) => item.submissionId !== data.submissionId);
+  queue.push(data);
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-10)));
+}
+
+async function sendProgress(scaleId) {
+  const result = session.results[scaleId];
+  if (!result || !session.consent.dataUse) return;
+  const data = progressPayload(scaleId);
+  const endpoint = String(config.submissionEndpoint || "").trim();
+  const directAppsScript = /script\.google(?:usercontent)?\.com/i.test(endpoint);
+
+  if (!endpoint || (directAppsScript && !config.allowDirectAppsScript)) {
+    queueSubmission(data);
+    result.submissionStatus = "queued";
+    persist();
+    if (route.name === "result" && route.scaleId === scaleId) render();
+    return;
+  }
+
+  try {
+    const direct = config.submissionMode === "direct-apps-script";
+    const response = await fetch(endpoint, {
+      method: "POST",
+      mode: direct ? "no-cors" : "cors",
+      credentials: "omit",
+      cache: "no-store",
+      referrerPolicy: "no-referrer",
+      headers: { "Content-Type": direct ? "text/plain;charset=UTF-8" : "application/json" },
+      body: JSON.stringify(data)
+    });
+    if (!direct && !response.ok) throw new Error("Submission rejected");
+    result.submissionStatus = "sent";
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(readQueue().filter((item) => item.submissionId !== data.submissionId)));
+  } catch (_) {
+    queueSubmission(data);
+    result.submissionStatus = "queued";
+  }
+  persist();
+  if (route.name === "result" && route.scaleId === scaleId) render();
+}
+
+function reportText() {
+  return ORDER.map((scaleId) => scales[scaleId].short + ": " + resultModel(scaleId, session.results[scaleId]).headline).join("\n");
+}
+
+function drawWrapped(context, text, x, y, maxWidth, lineHeight, maxLines) {
+  const words = text.split(/\s+/);
+  const lines = [];
+  let line = "";
+  words.forEach((word) => {
+    const trial = line ? line + " " + word : word;
+    if (context.measureText(trial).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = trial;
+    }
+  });
+  if (line) lines.push(line);
+  lines.slice(0, maxLines).forEach((entry, index) => context.fillText(entry, x, y + index * lineHeight));
+}
+
+function makeReportCanvas() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1350;
+  const context = canvas.getContext("2d");
+  const gradient = context.createLinearGradient(0, 0, 1080, 1350);
+  gradient.addColorStop(0, "#17332a");
+  gradient.addColorStop(0.58, "#205f4e");
+  gradient.addColorStop(1, "#d98b46");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.fillStyle = "rgba(255,255,255,.12)";
+  context.beginPath();
+  context.arc(930, 130, 240, 0, Math.PI * 2);
+  context.fill();
+  context.beginPath();
+  context.arc(100, 1210, 290, 0, Math.PI * 2);
+  context.fill();
+
+  context.fillStyle = "#d9f4e5";
+  context.font = "700 30px Arial";
+  context.fillText("MINDPOP  /  5 OF 5 COMPLETE", 80, 100);
+  context.fillStyle = "#ffffff";
+  context.font = "800 84px Arial";
+  context.fillText("My MindPop Mix", 80, 205);
+  context.font = "500 34px Arial";
+  context.fillText("Self-awareness, but make it cute.", 80, 265);
+
+  let y = 390;
+  ORDER.forEach((scaleId, index) => {
+    const model = resultModel(scaleId, session.results[scaleId]);
+    context.fillStyle = index % 2 ? "#fff0d8" : "#d9f4e5";
+    context.beginPath();
+    if (context.roundRect) context.roundRect(80, y, 920, 130, 28);
+    else context.rect(80, y, 920, 130);
+    context.fill();
+    context.fillStyle = "#17332a";
+    context.font = "800 28px Arial";
+    context.fillText(scales[scaleId].short.toUpperCase(), 115, y + 44);
+    context.font = "600 31px Arial";
+    drawWrapped(context, model.headline, 115, y + 88, 820, 36, 2);
+    y += 155;
+  });
+
+  context.fillStyle = "#ffffff";
+  context.font = "600 25px Arial";
+  drawWrapped(context, "A reflection, not a diagnosis. No name or raw answers included.", 80, 1215, 900, 34, 2);
+  context.font = "800 28px Arial";
+  context.fillText("mindpop  \u2728  notice your patterns", 80, 1300);
+  return canvas;
+}
+
+function canvasBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Image unavailable")), "image/png");
   });
 }
 
-// ---------------- START ----------------
-
-if (sessionState.completedTests.length > 0) {
-    renderDashboard();
-} else {
-    renderConsent();
+async function shareReport() {
+  if (!allDone()) return;
+  try {
+    const blob = await canvasBlob(makeReportCanvas());
+    const file = new File([blob], "my-mindpop-mix.png", { type: "image/png" });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ title: "My MindPop Mix", text: "I finished all five MindPop check-ins.\n\n" + reportText(), files: [file] });
+      notice = "Your report is ready to share.";
+    } else {
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = file.name;
+      anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      notice = "Your shareable report image was downloaded.";
+    }
+  } catch (error) {
+    if (error && error.name === "AbortError") return;
+    notice = "Could not create the report image on this browser. Try downloading your private data instead.";
+  }
+  render();
 }
+
+function downloadSnapshot() {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    note: "Private, non-diagnostic MindPop reflection",
+    results: Object.fromEntries(ORDER.map((scaleId) => [scaleId, session.results[scaleId].score]))
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "mindpop-snapshot.json";
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  if (event.target.id === "consent-form") {
+    if (!form.get("participate") || !form.get("dataUse")) return;
+    session.consent = { participate: true, dataUse: true, acceptedAt: new Date().toISOString() };
+    persist();
+    return go("profile");
+  }
+  if (event.target.id === "profile-form") {
+    if (form.get("website")) return;
+    const role = String(form.get("role") || "");
+    const allowedYears = yearChoices(role);
+    const year = String(form.get("year") || "");
+    if (allowedYears.length && !allowedYears.includes(year)) return;
+    session.profile = {
+      name: String(form.get("name") || "").trim(),
+      faculty: String(form.get("faculty") || ""),
+      role,
+      year: allowedYears.length ? year : "",
+      gender: String(form.get("gender") || "")
+    };
+    if (!session.profile.name || !session.profile.faculty || !session.profile.role || !session.profile.gender) return;
+    persist();
+    go("dashboard");
+  }
+});
+
+document.addEventListener("change", (event) => {
+  if (event.target.id === "role") updateYearField(event.target.value);
+});
+
+document.addEventListener("click", (event) => {
+  const target = event.target.closest("[data-action]");
+  if (!target) return;
+  event.preventDefault();
+  const action = target.dataset.action;
+  if (action === "begin") return go("consent");
+  if (action === "home") return go(session.consent.participate ? "dashboard" : "landing");
+  if (action === "privacy") return go("privacy", { previous: route });
+  if (action === "close-privacy") return go(session.consent.participate ? "dashboard" : "landing");
+  if (action === "dashboard") return go("dashboard");
+  if (action === "scale") return startScale(target.dataset.scale);
+  if (action === "result") return go("result", { scaleId: target.dataset.scale });
+  if (action === "previous") return go("question", { scaleId: route.scaleId, index: Math.max(0, route.index - 1) });
+  if (action === "answer") {
+    const scaleId = target.dataset.scale;
+    const index = Number(target.dataset.index);
+    session.drafts[scaleId][index] = Number(target.dataset.value);
+    persist();
+    if (index < scales[scaleId].questions.length - 1) return go("question", { scaleId, index: index + 1 });
+    return render();
+  }
+  if (action === "finish") return finishScale(target.dataset.scale);
+  if (action === "summary") return go("summary");
+  if (action === "share-report") return shareReport();
+  if (action === "download") return downloadSnapshot();
+  if (action === "clear" && window.confirm("Delete all MindPop progress and queued responses from this device?")) {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(QUEUE_KEY);
+    session = freshSession();
+    return go("landing");
+  }
+});
+
+if (session.consent.participate) route = { name: "dashboard" };
+render();

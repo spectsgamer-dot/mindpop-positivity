@@ -1,0 +1,8 @@
+{
+  "name": "mindpop-positivity",
+  "version": "2.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node tests/scoring.test.js && node tests/site.test.js"
+  }
+}
